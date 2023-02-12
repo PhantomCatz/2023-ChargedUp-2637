@@ -33,21 +33,8 @@ public class Robot extends TimedRobot {
   public static Timer currentTime;
   public static CatzIntake intake;
   public ArrayList<CatzLog> dataArrayList;
+
   private XboxController xboxDrv;
-  private XboxController xboxAux;
-
-  private final int XBOX_DRV_PORT = 0;
-  private final int XBOX_AUX_PORT = 1;
-  private final int DPAD_UP = 0;
-  private final int DPAD_DN = 180;
-  private final int DPAD_LT = 270;
-  private final int DPAD_RT = 90;
-  
-
-  private final boolean DEPLOYED = true;
-  private final boolean STOWED = false;
-  public boolean elevatorState = STOWED;
-  public boolean intakeState = STOWED; 
   private double steerAngle = 0.0;
   private double drivePower = 0.0;
   private double turnPower = 0.0;
@@ -60,8 +47,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit()
   {
-    xboxDrv = new XboxController(XBOX_DRV_PORT);
-    xboxAux = new XboxController(XBOX_AUX_PORT);
+    xboxDrv = new XboxController(0);
 
     drivetrain = new CatzDrivetrain();
     dataCollection = new DataCollection();
@@ -169,37 +155,14 @@ public class Robot extends TimedRobot {
     if(xboxDrv.getStartButtonPressed())
     {
       zeroGyro();
-    }    
-   
-
-    /*
-     * Intake Controls
-    */
-
-    if(xboxDrv.getLeftStickButton())
-    {
-      if(elevatorState == DEPLOYED)
-      {
-        //flash colors indicating that you can't deploy
-       
-      }
-      else
-      {
-        intake.intakeMode = intake.INTAKE_MODE_DEPLOY_START;
-        intakeState = DEPLOYED;
-      }
-       
-    }
-    else if(xboxDrv.getRightStickButton())
-    {
-      intake.intakeMode = intake.INTAKE_MODE_STOW_START;
-      intakeState = STOWED;
     }
 
-    /*   
-    leftTrigger-->control rollerOut
-    if (xbox.getLeftTriggerAxis() > 0.2)
-    {
+    //----------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------Intake----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------------------------------------------------------------
+  /*   
+  //leftTrigger-->control rollerOut
+    if (xbox.getLeftTriggerAxis() > 0.2){
       if(intake.intakeDeployed == true)
       {
         intake.intakeRollerOut();    
@@ -207,8 +170,7 @@ public class Robot extends TimedRobot {
       intake.intakeRollerOut = true;
     }
     //rightTrigger-->control rollerIn
-    if (xbox.getLeftTriggerAxis() > 0.2)
-    {
+    if (xbox.getLeftTriggerAxis() > 0.2){
       if(intake.intakeDeployed == true)
       {
         intake.intakeRollerIn();    
@@ -216,116 +178,15 @@ public class Robot extends TimedRobot {
       intake.intakeRollerIn = true;
     }
     */
-
-
-    /*
-     * Indexer Controls
-    */
-
-    if(xboxAux.getPOV() == DPAD_LT)
-    {
-      //indexer manual index
-    }
-
-    /*
-     * Elevator Controls automated
-    */
     
-    if(xboxAux.getAButton())
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-      //go to LOW scoring position
+    //LeftStickButton--> control Deploy
+    if (xboxDrv.getLeftStickButton()){
+      intake.intakeMode = intake.INTAKE_MODE_DEPLOY_START;
     }
-    else if(xboxAux.getBButton())
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-      //go to MID scoring position 
+    //RightStickButton--> control Stow
+    else if (xboxDrv.getRightStickButton()){
+      intake.intakeMode = intake.INTAKE_MODE_STOW_START;
     }
-    else if(xboxAux.getYButton())
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-      //go to HIGH scoring position
-    }
-    
-  
-    if(xboxAux.getAButton())
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-
-      //go to LOW scoring position
-    }
-    else if(xboxAux.getBButton())
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-      //go to MID scoring position 
-    }
-    else if(xboxAux.getYButton())
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-      //go to HIGH scoring position
-    }
-
-    /*
-     * Elevator Controls Manual
-    */
-    if(Math.abs(xboxAux.getRightY()) > 0.1 )
-    {
-      //manual raise/lower elevator
-      
-    }
-    if(xboxAux.getPOV() == DPAD_UP)
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-      
-      //while pressed, deploy elevator
-    
-    }
-    else if(xboxAux.getPOV() == DPAD_DN)
-    {
-      //while pressed, retract elevator
-    }
-
-  /*
-   * Claw manual Controls 
-  */
-  if(xboxAux.getXButton())
-  {
-    //open claw
-  }
-  else
-  {
-    //close claw
-  }
-
-  
 
         
     
