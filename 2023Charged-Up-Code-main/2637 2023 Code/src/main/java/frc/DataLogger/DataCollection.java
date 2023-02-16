@@ -42,13 +42,23 @@ public class DataCollection
     public static final int LOG_ID_NONE            = 0;
     public static final int LOG_ID_SWERVE_STEERING = 1;
     public static final int LOG_ID_SWERVE_DRIVING  = 2;
+    public static final int LOG_ID_BALANCE         = 3;
+    public static final int LOG_ID_INTAKE          = 4;
+    public static final int LOG_ID_INDEXER         = 5;
+    public static final int LOG_ID_ELEVATOR        = 6;
+    public static final int LOG_ID_CLAW            = 7;
+    public static final int LOG_ID_DRV_STRAIGHT    = 8;
+    public static final int LOG_ID_TURN_IN_PLACE   = 9;
 
     public boolean validLogID = true;
 
     private final String LOG_HDR_SWERVE_STEERING = "time,target,lf-angle,lf-err,lf-flip-err,lb-angle,lb-err,lb-flip-err,rf-angle,rf-err,rf-flip-err,rb-angle,rb-err,rb-flip-err";
     private final String LOG_HDR_SWERVE_DRIVING = "time,target,lf-angle,lf-dist,lf-vel,lb-angle,lb-dist,lb-vel,rf-angle,rf-dist,rf-vel,rb-angle,rb-dist,rb-vel,lf-error";
+    private final String LOG_HDR_BALANCE_MOD = "1,2,3,4";
 
     public String logStr;
+
+    public static String mechanismName = "Not Set";
 
     public static final SendableChooser<Integer> chosenDataID = new SendableChooser<>();
 
@@ -124,6 +134,7 @@ public class DataCollection
         chosenDataID.setDefaultOption("None",        LOG_ID_NONE);
         chosenDataID.addOption("Swerve Module", LOG_ID_SWERVE_STEERING);
         chosenDataID.addOption("Swerve Module", LOG_ID_SWERVE_DRIVING);
+        chosenDataID.addOption("Balance Data",       LOG_ID_BALANCE);
 
         SmartDashboard.putData("Data Collection", chosenDataID);
     }
@@ -166,8 +177,20 @@ public class DataCollection
                 break;
             case LOG_ID_SWERVE_DRIVING :    
                 break;
-
-
+            case LOG_ID_BALANCE: 
+                break;
+            case LOG_ID_INTAKE:
+                break;
+            case LOG_ID_INDEXER:
+                break;
+            case LOG_ID_ELEVATOR:
+                break;
+            case LOG_ID_CLAW:
+                break;
+            case LOG_ID_DRV_STRAIGHT:
+                break;
+            case LOG_ID_TURN_IN_PLACE:
+                break;
             default :
                 validLogID = false;
 
@@ -197,6 +220,8 @@ public class DataCollection
             case LOG_ID_SWERVE_DRIVING:
                 pw.printf(LOG_HDR_SWERVE_DRIVING);
                 break;
+            case LOG_ID_BALANCE:
+                pw.printf(LOG_HDR_BALANCE_MOD);
             default :
                 pw.printf("Invalid Log Data ID");            
 
@@ -207,7 +232,7 @@ public class DataCollection
     //create log file
     public String createFilePath()
     {
-	    String logDataFullFilePath = logDataFilePath + dateFormatted + logDataFileType;
+        String logDataFullFilePath = logDataFilePath + " " + setLogDataName() + " " + dateFormatted +  logDataFileType;
     	return logDataFullFilePath;
     }
 
@@ -240,5 +265,17 @@ public class DataCollection
     public static int getLogDataID()
     {
         return logDataID;
+    }
+
+    public static String setLogDataName()
+    {
+        switch(getLogDataID())
+        {
+
+            case(LOG_ID_BALANCE):
+            mechanismName = "Balance Data";
+                break;
+        }
+        return mechanismName;
     }
 }

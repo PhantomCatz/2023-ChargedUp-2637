@@ -42,16 +42,15 @@ public class Robot extends TimedRobot {
   private final int DPAD_DN = 180;
   private final int DPAD_LT = 270;
   private final int DPAD_RT = 90;
-  
 
   private final boolean DEPLOYED = true;
-  private final boolean STOWED = false;
+  private final boolean STOWED   = false;
   public boolean elevatorState = STOWED;
-  public boolean intakeState = STOWED; 
+  public boolean intakeState   = STOWED; 
   private double steerAngle = 0.0;
   private double drivePower = 0.0;
-  private double turnPower = 0.0;
-  private double gyroAngle = 0.0;
+  private double turnPower  = 0.0;
+  private double gyroAngle  = 0.0;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -74,7 +73,6 @@ public class Robot extends TimedRobot {
 
     dataArrayList = new ArrayList<CatzLog>();
     dataCollection.dataCollectionInit(dataArrayList);
-
 
     currentTime = new Timer();
   }
@@ -138,10 +136,15 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic()
   {
+    
+    /*
+     * Drive Train Controls
+    */
+
     steerAngle = calcJoystickAngle(xboxDrv.getLeftX(), xboxDrv.getLeftY());
     drivePower = calcJoystickPower(xboxDrv.getLeftX(), xboxDrv.getLeftY());
-    turnPower = xboxDrv.getRightX();
-    gyroAngle = getGyroAngle();
+    turnPower  = xboxDrv.getRightX();
+    gyroAngle  = getGyroAngle();
 
     if(drivePower >= 0.1)
     {
@@ -390,25 +393,25 @@ public class Robot extends TimedRobot {
         {
             if(xJoy < 0)    //joystick pointed left
             {
-                //no change
+              //no change
             }
             if(xJoy >= 0)   //joystick pointed right
             {
-                angle = -angle;
+              angle = -angle;
             }
         }
         else    //joystick pointed down
         {
             if(xJoy < 0)    //joystick pointed left
             {
-                angle = 180 - angle;
+              angle = 180 - angle;
             }
             if(xJoy >= 0)   //joystick pointed right
             {
-                angle = -180 + angle;
+              angle = -180 + angle;
             }
         }
-        return angle;
+      return angle;
     }
 
     public double calcJoystickPower(double xJoy, double yJoy)
@@ -418,11 +421,11 @@ public class Robot extends TimedRobot {
 
     public void zeroGyro()
     {
-        navX.setAngleAdjustment(-navX.getYaw());
+      navX.setAngleAdjustment(-navX.getYaw());
     }
 
     public double getGyroAngle()
     {
-        return navX.getAngle();
+      return navX.getAngle();
     }
 }
