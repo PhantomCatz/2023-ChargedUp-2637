@@ -32,14 +32,21 @@ public class DataCollection
 
     StringBuilder sb = new StringBuilder();
 
-    public static final int LOG_ID_NONE    = 0;
-    public static final int LOG_ID_BALANCE = 1;
-    public static final int LOG_ID_INDEXER = 2;
-    public static final int LOG_ID_SWERVE_DRIVING = 3;
-    public static final int LOG_ID_SWERVE_STEERING = 4;
+    public static final int LOG_ID_NONE            = 0;
+    public static final int LOG_ID_SWERVE_STEERING = 1;
+    public static final int LOG_ID_SWERVE_DRIVING  = 2;
+    public static final int LOG_ID_BALANCE         = 3;
+    public static final int LOG_ID_INTAKE          = 4;
+    public static final int LOG_ID_INDEXER         = 5;
+    public static final int LOG_ID_ELEVATOR        = 6;
+    public static final int LOG_ID_CLAW            = 7;
+    public static final int LOG_ID_DRV_STRAIGHT    = 8;
+    public static final int LOG_ID_TURN_IN_PLACE   = 9;
+    
     public boolean validLogID = true;
 
-    private final String LOG_HDR_BALANCE_MOD = "1,2,3,4";
+    private final String LOG_HDR_SWERVE_STEERING = "time,target,lf-angle,lf-err,lf-flip-err,lb-angle,lb-err,lb-flip-err,rf-angle,rf-err,rf-flip-err,rb-angle,rb-err,rb-flip-err";
+    private final String LOG_HDR_SWERVE_DRIVING = "time,target,lf-angle,lf-dist,lf-vel,lb-angle,lb-dist,lb-vel,rf-angle,rf-dist,rf-vel,rb-angle,rb-dist,rb-vel,lf-error";
     public String logStr;
 
     public static String mechanismName = "Not Set";
