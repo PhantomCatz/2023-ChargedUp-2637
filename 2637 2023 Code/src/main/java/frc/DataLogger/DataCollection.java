@@ -2,8 +2,10 @@ package frc.DataLogger;
 
 import java.util.ArrayList;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Robot;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -22,15 +24,20 @@ public class DataCollection
 
     public boolean fileNotAppended = false;
 
+    //decide the location and extender
     public final String logDataFilePath = "//media//sda1//RobotData";
     public final String logDataFileType = ".csv";
 
-    public        boolean logDataValues = false;   
-    public static int     logDataID; 
+    private       Thread  dataThread;
 
-    public ArrayList<CatzLog> logData; 
+    public        boolean logDataValues = false;   
+    public static int     logDataID;
+
+    public ArrayList<CatzLog> logData;
 
     StringBuilder sb = new StringBuilder();
+
+    private final double LOG_SAMPLE_RATE = 0.1;
 
     public static final int LOG_ID_NONE            = 0;
     public static final int LOG_ID_SWERVE_STEERING = 1;
@@ -42,11 +49,19 @@ public class DataCollection
     public static final int LOG_ID_CLAW            = 7;
     public static final int LOG_ID_DRV_STRAIGHT    = 8;
     public static final int LOG_ID_TURN_IN_PLACE   = 9;
-    
+
     public boolean validLogID = true;
 
     private final String LOG_HDR_SWERVE_STEERING = "time,target,lf-angle,lf-err,lf-flip-err,lb-angle,lb-err,lb-flip-err,rf-angle,rf-err,rf-flip-err,rb-angle,rb-err,rb-flip-err";
     private final String LOG_HDR_SWERVE_DRIVING = "time,target,lf-angle,lf-dist,lf-vel,lb-angle,lb-dist,lb-vel,rf-angle,rf-dist,rf-vel,rb-angle,rb-dist,rb-vel,lf-error";
+    private final String LOG_HDR_BALANCE_MOD = "1,2,3,4";
+    private final String LOG_HDR_INTAKE = "";
+    private final String LOG_HDR_INDEXER = "";
+    private final String LOG_HDR_ELEVATOR = "";
+    private final String LOG_HDR_CLAW = "";
+    private final String LOG_HDR_DRV_STRAIGHT = "";
+    private final String LOG_HDR_TURN_IN_PLACE = "";
+
     public String logStr;
 
     public static String mechanismName = "Not Set";
@@ -64,6 +79,21 @@ public class DataCollection
     public static final int shift6 = 1 << 6;
     public static final int shift7 = 1 << 7;
 
+
+    /*public void updateLogDataID()
+    {
+        if(chosenDataID.getSelected() == LOG_ID_NONE)
+        {
+            stopDataCollection();
+        }
+        else
+        {
+            startDataCollection();
+        }
+        setLogDataID(chosenDataID.getSelected());
+
+    }*/
+
     public void setLogDataID(final int dataID)
     {
         logDataID = dataID;
@@ -73,12 +103,33 @@ public class DataCollection
     public void dataCollectionInit(final ArrayList<CatzLog> list)
     {   
         date = Calendar.getInstance().getTime();
-      
         sdf = new SimpleDateFormat("yyyy-MM-dd kk.mm.ss");	
         dateFormatted = sdf.format(date);
+
         logData = list;
 
         dataCollectionShuffleboard();
+
+        dataThread = new Thread( () ->
+        {
+            while(!Thread.interrupted())
+            {   
+                if(logDataValues == true)
+                {
+                    collectData(logDataID);
+                } 
+                else if (logDataValues == false) 
+                {
+
+                } 
+
+                Timer.delay(LOG_SAMPLE_RATE);
+
+            }
+
+        } );
+
+        dataThread.start();
     }
 
     /*-----------------------------------------------------------------------------------------
@@ -87,8 +138,15 @@ public class DataCollection
     public void dataCollectionShuffleboard()
     {
         chosenDataID.setDefaultOption("None",        LOG_ID_NONE);
+        chosenDataID.addOption("Swerve Steering", LOG_ID_SWERVE_STEERING);
+        chosenDataID.addOption("Swerve Driving", LOG_ID_SWERVE_DRIVING);
         chosenDataID.addOption("Balance Data",       LOG_ID_BALANCE);
-        chosenDataID.addOption("INDEXER", LOG_ID_INDEXER);
+        chosenDataID.addOption("Intake", LOG_ID_INTAKE);
+        chosenDataID.addOption("Indexer", LOG_ID_INDEXER);
+        chosenDataID.addOption("Elevator", LOG_ID_ELEVATOR);
+        chosenDataID.addOption("Claw", LOG_ID_CLAW);
+        chosenDataID.addOption("Auton Drv Straight", LOG_ID_DRV_STRAIGHT);
+        chosenDataID.addOption("Auton Turn In Place", LOG_ID_TURN_IN_PLACE);
 
         SmartDashboard.putData("Data Collection", chosenDataID);
     }
@@ -103,9 +161,54 @@ public class DataCollection
         logDataValues = false; 
     }
 
-    /* ---------------------------------------------------
-    Method only used for mechanisms with no running threads
-    ------------------------------------------------------*/
+    public void collectData(final int dataID)
+    {
+        CatzLog data;
+        double data1 = -999.0;
+        double data2 = -999.0;
+        double data3 = -999.0;
+        double data4 = -999.0;
+        double data5 = -999.0;
+        double data6 = -999.0;
+        double data7 = -999.0;
+        double data8 = -999.0;
+        double data9 = -999.0;
+        double data10 = -999.0;
+        double data11 = -999.0;
+        double data12 = -999.0;
+        double data13 = -999.0;
+        double data14 = -999.0;
+        int data15    = -999;
+        //double data16 = -999.0;
+
+
+        //define each data
+        switch (dataID) 
+        {
+            case LOG_ID_SWERVE_STEERING :    
+                break;
+            case LOG_ID_SWERVE_DRIVING :    
+                break;
+            case LOG_ID_BALANCE: 
+                break;
+            case LOG_ID_INTAKE:
+                break;
+            case LOG_ID_INDEXER:
+                break;
+            case LOG_ID_ELEVATOR:
+                break;
+            case LOG_ID_CLAW:
+                break;
+            case LOG_ID_DRV_STRAIGHT:
+                break;
+            case LOG_ID_TURN_IN_PLACE:
+                break;
+            default :
+                validLogID = false;
+
+        }
+    }
+
     public static void resetBooleanData()
     {
         boolData = 0;
@@ -123,11 +226,33 @@ public class DataCollection
     {
         switch (logDataID)
         {
-            case LOG_ID_BALANCE :
-
-             pw.printf(LOG_HDR_BALANCE_MOD);
-             break;
-
+            case LOG_ID_SWERVE_STEERING:
+                pw.printf(LOG_HDR_SWERVE_STEERING);
+                break;
+            case LOG_ID_SWERVE_DRIVING:
+                pw.printf(LOG_HDR_SWERVE_DRIVING);
+                break;
+            case LOG_ID_BALANCE:
+                pw.printf(LOG_HDR_BALANCE_MOD);
+            break;
+            case LOG_ID_INTAKE:
+                pw.printf(LOG_HDR_INTAKE);
+            break;
+            case LOG_ID_INDEXER:
+                pw.printf(LOG_HDR_INDEXER);
+            break;
+            case LOG_ID_ELEVATOR:
+                pw.printf(LOG_HDR_ELEVATOR);
+            break; 
+            case LOG_ID_CLAW:
+                pw.printf(LOG_HDR_CLAW);
+            break;
+            case LOG_ID_DRV_STRAIGHT:
+                pw.printf(LOG_HDR_DRV_STRAIGHT);
+            break;
+            case LOG_ID_TURN_IN_PLACE:
+                pw.printf(LOG_HDR_TURN_IN_PLACE);
+            break;
             default :
                 pw.printf("Invalid Log Data ID");            
 
@@ -135,12 +260,14 @@ public class DataCollection
         }
     }
     
+    //create log file
     public String createFilePath()
     {
         String logDataFullFilePath = logDataFilePath + " " + setLogDataName() + " " + dateFormatted +  logDataFileType;
     	return logDataFullFilePath;
     }
 
+    // print out data after fully updated
     public void exportData(ArrayList<CatzLog> data) throws IOException
     {   
         System.out.println("Export Data ///////////////");    
@@ -154,7 +281,7 @@ public class DataCollection
             writeHeader(pw);
             pw.print("\n");
 
-    
+            // loop through arraylist and adds it to the StringBuilder
             int dataSize = data.size();
             for (int i = 0; i < dataSize; i++)
             {
@@ -175,10 +302,33 @@ public class DataCollection
     {
         switch(getLogDataID())
         {
-
+            case(LOG_ID_SWERVE_STEERING):
+                mechanismName = "Swerve Steering Data";
+            break;
+            case(LOG_ID_SWERVE_DRIVING):
+                mechanismName = "Swerve Driving Data";
+            break; 
+            case(LOG_ID_BALANCE):
+                mechanismName = "Balancing Data";
+            break;
+            case(LOG_ID_INTAKE):
+                mechanismName = "Intake Data";
+            break;
             case(LOG_ID_INDEXER):
-            mechanismName = "Index";
-                break;
+                mechanismName = "Indexer Data";
+            break;
+            case(LOG_ID_ELEVATOR):
+                mechanismName = "Elevator Data";
+            break;
+            case(LOG_ID_CLAW):
+                mechanismName = "Claw Data";
+            break;
+            case(LOG_ID_DRV_STRAIGHT):
+                mechanismName = "Auton Drv Straight Data";
+            break;
+            case(LOG_ID_TURN_IN_PLACE):
+                mechanismName = "Auton Turn In Place Data";
+            break;
         }
         return mechanismName;
     }
