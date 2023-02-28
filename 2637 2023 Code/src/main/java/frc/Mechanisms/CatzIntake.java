@@ -87,8 +87,8 @@ public class CatzIntake {
 
   private final double INTAKE_PIVOT_DEPLOY_ROTATION = -8700.0;
   private final double INTAKE_PIVOT_STOW_ROTATION = 20.0;
-  private final double INTAKE_PIVOT_MAXIMUM_ROTATION = -9010.0;
-  private final double INTAKE_PIVOT_MINIMUM_ROTATION = 10.0;
+  private final double INTAKE_PIVOT_MAXIMUM_ROTATION = -9350.0;
+  private final double INTAKE_PIVOT_MINIMUM_ROTATION = 0.0;
   public int counter=0;
 
   private final double INTAKE_PIVOT_DEPLOY_POWER = 0.2;
@@ -112,7 +112,7 @@ public class CatzIntake {
   public static double finalMotorPower = 0;
   public static double Kp = 0.01;
   public static double Kd = 0.001;
-  public final static int INTAKE_DEPLOY_FINAL_ANGLE = 90;
+  public final static int INTAKE_DEPLOY_FINAL_ANGLE = 85;
   public final static int INTAKE_DEPLOY_INITIAL_ANGLE = 0;
   public final int INTAKE_STOW_FINAL_ANGLE = 0;
   public final int INTAKE_STOW_INITIAL_ANGLE = 90;
@@ -122,7 +122,7 @@ public class CatzIntake {
   public static double deltaAngle = 0;
 
   public final static double INTAKE_FULLY_DEPLOYED_ANGLE = 89.0;
-  public final static double INTAKE_FULLY_STOWED_ANGELE  = 1.0;
+  public final static double INTAKE_FULLY_STOWED_ANGELE  = 55.0;
 
 
   // a are the coeffient for the fifth order polynomial profile
@@ -221,177 +221,186 @@ public class CatzIntake {
    
 
   public void intakeRollerIn()
-    {
-        intakeRollerMotor.set(ControlMode.PercentOutput,-INTAKE_ROLLER_MOTOR_POWER);
-        intakeRollerState = INTAKE_ROLLER_IN;
-    }
+  {
+      intakeRollerMotor.set(ControlMode.PercentOutput,-INTAKE_ROLLER_MOTOR_POWER);
+      intakeRollerState = INTAKE_ROLLER_IN;
+  }
 
-    public void intakeRollerOut()
-    {
-        intakeRollerMotor.set(ControlMode.PercentOutput,OUTTAKE_ROLLER_MOTOR_POWER);
-        intakeRollerState = INTAKE_ROLLER_OUT;
-    }
+  public void intakeRollerOut()
+  {
+      intakeRollerMotor.set(ControlMode.PercentOutput,OUTTAKE_ROLLER_MOTOR_POWER);
+      intakeRollerState = INTAKE_ROLLER_OUT;
+  }
 
 
-    public void intakeRollerOff()
-    {
-        intakeRollerMotor.set(ControlMode.PercentOutput,INTAKE_MOTOR_POWER_OFF);
-        intakeRollerState = INTAKE_ROLLER_OFF;
-    }
+  public void intakeRollerOff()
+  {
+      intakeRollerMotor.set(ControlMode.PercentOutput,INTAKE_MOTOR_POWER_OFF);
+      intakeRollerState = INTAKE_ROLLER_OFF;
+  }
 
     
 
 
 //------------------------------------------------Pivot--------------------------------------------------------------
     
-    public void intakeControl(){
-    
-        intakeThread = new Thread(() ->
-        { 
-          while(true)
+    public void intakeControl()
+    {
+      System.out.println("mthod intakecontrol in");
+      intakeThread = new Thread(() ->
+      { 
+        while(true)
+        {
+          System.out.println("+");
+          //int currentAngle = (int)getIntakeDeployPositionDegrees();
+          switch(intakePivotMode)
           {
-                //int currentAngle = (int)getIntakeDeployPositionDegrees();
-                switch(intakePivotMode)
-                {
-                    case INTAKE_PIVOT_MODE_NULL:
-                      
-                      break;
-
-                    case INTAKE_PIVOT_MODE_DEPLOY:
-                      currentAngle = getIntakeDeployPositionDegrees();
-                      if(currentAngle > INTAKE_PIVOT_DEPLOY_POWER_OFF_ANGLE )
-                      {
-                        intakePivotMotor.set(ControlMode.Position,INTAKE_PIVOT_DEPLOY_ROTATION);
-                        //intakePivotMode = INTAKE_PIVOT_MODE_NULL;
-
-                        intakePivotMotor.set(ControlMode.MotionMagic, INTAKE_PIVOT_DEPLOY_ROTATION);
-                      }
-                     
-                      break;
-
-                    case INTAKE_PIVOT_MODE_STOW:
-                      currentAngle = getIntakeDeployPositionDegrees();
-
-                      if(Math.abs(intakePivotMotor.getClosedLoopError()) < 200.0){
-                        intakePivotMotor.set(INTAKE_MOTOR_POWER_OFF);
-                       }
-
-                      else if(currentAngle < 30.0)
-                      {
-                        intakePivotMotor.set(ControlMode.Position,INTAKE_PIVOT_STOW_ROTATION);
-                       // intakePivotMotor.configAllowableClosedloopError(1, 200.0);
-
-                      }
-                     
-
-                      break;
-
-                    case INTAKE_PIVOT_MODE_DEPLOY_CALC:
-                    System.out.println("in deploycalc");
-                        if(firstTimeThrough == true ){
-                        pivotTimer.reset();
-                        firstTimeThrough = false;
-                        }
-                         
-                        currentAngle = getIntakeDeployPositionDegrees();
-                        time = pivotTimer.get();
-
-                        deltaAngle = currentAngle - angleOld;
-                        if(time > 0.01){
-                        deltaTime = time - timeOld;
-                         }else{
-                        deltaTime = 100;//this is for initial time
-                        }
-                        angleOld = getIntakeDeployPositionDegrees();
-                        timeOld = time;
-                        angleDot = deltaAngle/deltaTime;
-                        powerForMotor = ALPHA3_DEPLOY * Math.pow(time , 3) - ALPHA4_DEPLOY *Math.pow(time , 4) + ALPHA5_DEPLOY *Math.pow(time , 5);
-                       
-                        targetAngle = (A3_DEPLOY*Math.pow(time , 3)) + (A4_DEPLOY*Math.pow(time , 4)) + (A5_DEPLOY*Math.pow(time , 5));
-                        targetAngularRate = (3 * A3_DEPLOY * Math.pow(time , 2)) + (4 * A4_DEPLOY * Math.pow(time , 3)) + (5 * A5_DEPLOY * Math.pow(time , 4));
-                        finalMotorPower = powerForMotor + Kp*(targetAngle - getIntakeDeployPositionDegrees()) + Kd*(targetAngularRate - deltaAngle/deltaTime); 
-                        finalMotorPower = -finalMotorPower;
-                        System.out.println("in deploy" + finalMotorPower);
-                        intakePivotMotor.set(ControlMode.PercentOutput,finalMotorPower);
-                         
-                        currentAngle = getIntakeDeployPositionDegrees();
-                        if(currentAngle > INTAKE_DEPLOY_FINAL_ANGLE){
-                          firstTimeThrough = true;
-                          timeOld = 0;
-                          intakePivotMode = INTAKE_PIVOT_MODE_FULLY_DEPLOYED;
-                        }
-                        
-                        
-                        break;
-
-                    case INTAKE_PIVOT_MODE_FULLY_DEPLOYED:
-                        intakePivotMotor.set(0);
-                        break;
-
-                    
-                    case INTAKE_PIVOT_MODE_STOW_CALC:
-                    System.out.println("in stowcalc");
-
-                      if(firstTimeThrough == true){
-                        pivotTimer.reset();
-                        firstTimeThrough = false;
-                        }
-
-                        currentAngle = getIntakeDeployPositionDegrees();
-                        time = pivotTimer.get();
-                        deltaAngle = currentAngle - angleOld;
-                        if(time > 0.01){
-                        deltaTime = time - timeOld;
-                        }else{
-                        deltaTime = 100;// this is for initial time/ to provent a s
-                        }
-                        angleOld = getIntakeDeployPositionDegrees();
-                        timeOld = time;//Math.pow(4,2)
-                        angleDot = deltaAngle/deltaTime;
-                        powerForMotor = ALPHA3_STOW * (Math.pow(time , 3)) - ALPHA4_STOW *(Math.pow(time , 4)) + ALPHA5_STOW *(Math.pow(time , 5)); 
-                        targetAngle = (A3_STOW*Math.pow(time , 3)) + (A4_STOW*Math.pow(time , 4)) + (A5_STOW*Math.pow(time , 5));
-                        targetAngularRate = (3 * A3_STOW * Math.pow(time , 2)) + (4 * A4_STOW * Math.pow(time , 3)) + (5 * A5_STOW * Math.pow(time , 4));
-                        finalMotorPower = powerForMotor + Kp*(targetAngle - getIntakeDeployPositionDegrees()) + Kd*(targetAngularRate - deltaAngle/deltaTime); 
-                        finalMotorPower = -finalMotorPower;
-                        System.out.println("finalMotor Power:" + finalMotorPower);
-
-                        intakePivotMotor.set(ControlMode.PercentOutput,finalMotorPower);
-                        currentAngle = getIntakeDeployPositionDegrees();
-                        if(currentAngle < INTAKE_FULLY_STOWED_ANGELE){
-                          firstTimeThrough = true;
-                          timeOld = 0;
-                          intakePivotMode = INTAKE_MODE_STOW_HOLD;
-                        }
-                       
-                    break;
-
-
-                    case INTAKE_MODE_STOW_HOLD:
-                        intakePivotMotor.set(0);
-
-                       
-                    break;
-
-                    default:
-                        intakePivotMotor.set(INTAKE_MOTOR_POWER_OFF);
-                        intakeRollerOff();
-                    break;
-                }//eng of switch
-                if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_INTAKE)
-                {
-                    data = new CatzLog(Robot.currentTime.get(),
-                    targetAngularRate, targetAngle, finalMotorPower, powerForMotor, currentAngle, deltaAngle, deltaTime,
-                     -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0,
-                    DataCollection.boolData);  
-                    Robot.dataCollection.logData.add(data);
-                }
-                Timer.delay(INTAKE_THREAD_PERIOD);
-
-              
-              }//eng of while true
+              case INTAKE_PIVOT_MODE_NULL:
                 
-        });
-        intakeThread.start();
+              break;
+
+              case INTAKE_PIVOT_MODE_DEPLOY:
+                currentAngle = getIntakeDeployPositionDegrees();
+                if(currentAngle > INTAKE_PIVOT_DEPLOY_POWER_OFF_ANGLE )
+                {
+                  intakePivotMotor.set(ControlMode.Position,INTAKE_PIVOT_DEPLOY_ROTATION);
+                  //intakePivotMode = INTAKE_PIVOT_MODE_NULL;
+
+                  intakePivotMotor.set(ControlMode.MotionMagic, INTAKE_PIVOT_DEPLOY_ROTATION);
+                }
+              break;
+              case INTAKE_PIVOT_MODE_STOW:
+                currentAngle = getIntakeDeployPositionDegrees();
+
+                if(Math.abs(intakePivotMotor.getClosedLoopError()) < 200.0)
+                {
+                  intakePivotMotor.set(INTAKE_MOTOR_POWER_OFF);
+                }
+                /* 
+                else if(currentAngle < 30.0)
+                {
+                  intakePivotMotor.set(ControlMode.Position,INTAKE_PIVOT_STOW_ROTATION);
+                  // intakePivotMotor.configAllowableClosedloopError(1, 200.0);
+
+                }
+                */
+                else if(currentAngle < 10.0)
+                {
+                  intakePivotMotor.set(0.0);
+                }
+              break;
+
+              case INTAKE_PIVOT_MODE_DEPLOY_CALC:
+                System.out.println("in deploycalc");
+                if(firstTimeThrough == true )
+                {
+                  pivotTimer.reset();
+                  firstTimeThrough = false;
+                }
+                    
+                currentAngle = getIntakeDeployPositionDegrees();
+                time = pivotTimer.get();
+
+                deltaAngle = currentAngle - angleOld;
+                if(time > 0.01)
+                {
+                  deltaTime = time - timeOld;
+                }
+                else
+                {
+                  deltaTime = 100;//this is for initial time
+                }
+                angleOld = getIntakeDeployPositionDegrees();
+                timeOld = time;
+                angleDot = deltaAngle/deltaTime;
+                powerForMotor = ALPHA3_DEPLOY * Math.pow(time , 3) - ALPHA4_DEPLOY *Math.pow(time , 4) + ALPHA5_DEPLOY *Math.pow(time , 5);
+                
+                targetAngle = (A3_DEPLOY*Math.pow(time , 3)) + (A4_DEPLOY*Math.pow(time , 4)) + (A5_DEPLOY*Math.pow(time , 5));
+                targetAngularRate = (3 * A3_DEPLOY * Math.pow(time , 2)) + (4 * A4_DEPLOY * Math.pow(time , 3)) + (5 * A5_DEPLOY * Math.pow(time , 4));
+                finalMotorPower = powerForMotor + Kp*(targetAngle - getIntakeDeployPositionDegrees()) + Kd*(targetAngularRate - deltaAngle/deltaTime); 
+                finalMotorPower = -finalMotorPower;
+                System.out.println("in deploy" + finalMotorPower);
+                intakePivotMotor.set(ControlMode.PercentOutput,finalMotorPower);
+                  
+                currentAngle = getIntakeDeployPositionDegrees();
+                if(currentAngle > INTAKE_DEPLOY_FINAL_ANGLE)
+                {
+                  firstTimeThrough = true;
+                  timeOld = 0;
+                  intakePivotMode = INTAKE_PIVOT_MODE_FULLY_DEPLOYED;
+                }   
+              break;
+
+              case INTAKE_PIVOT_MODE_FULLY_DEPLOYED:
+                intakePivotMotor.set(0);
+              break;
+
+              case INTAKE_PIVOT_MODE_STOW_CALC:
+                System.out.println("in stowcalc");
+
+                if(firstTimeThrough == true)
+                {
+                  pivotTimer.reset();
+                  firstTimeThrough = false;
+                }
+
+                currentAngle = getIntakeDeployPositionDegrees();
+                time = pivotTimer.get();
+                deltaAngle = currentAngle - angleOld;
+                if(time > 0.01)
+                {
+                  deltaTime = time - timeOld;
+                }
+                else
+                {
+                  deltaTime = 100;// this is for initial time/ to provent a s
+                }
+                angleOld = getIntakeDeployPositionDegrees();
+                timeOld = time;//Math.pow(4,2)
+                angleDot = deltaAngle/deltaTime;
+                powerForMotor = ALPHA3_STOW * (Math.pow(time , 3)) - ALPHA4_STOW *(Math.pow(time , 4)) + ALPHA5_STOW *(Math.pow(time , 5)); 
+                targetAngle = (A3_STOW*Math.pow(time , 3)) + (A4_STOW*Math.pow(time , 4)) + (A5_STOW*Math.pow(time , 5));
+                targetAngularRate = (3 * A3_STOW * Math.pow(time , 2)) + (4 * A4_STOW * Math.pow(time , 3)) + (5 * A5_STOW * Math.pow(time , 4));
+                finalMotorPower = powerForMotor + Kp*(targetAngle - getIntakeDeployPositionDegrees()) + Kd*(targetAngularRate - deltaAngle/deltaTime); 
+                finalMotorPower = -finalMotorPower;
+                System.out.println("finalMotor Power:" + finalMotorPower);
+
+                intakePivotMotor.set(ControlMode.PercentOutput,finalMotorPower);
+                currentAngle = getIntakeDeployPositionDegrees();
+                if(currentAngle < INTAKE_FULLY_STOWED_ANGELE)
+                {
+                  firstTimeThrough = true;
+                  timeOld = 0;
+                  intakePivotMode = INTAKE_MODE_STOW_HOLD;
+                } 
+              break;
+
+              case INTAKE_MODE_STOW_HOLD:
+                intakePivotMotor.set(0);
+              break;
+
+              default:
+                intakePivotMotor.set(INTAKE_MOTOR_POWER_OFF);
+                intakeRollerOff();
+              break;
+          }//eng of switch
+          
+          if(DataCollection.getLogDataID()== DataCollection.LOG_ID_INTAKE)
+          {
+            data = new CatzLog(Robot.currentTime.get(),
+            targetAngularRate, targetAngle, finalMotorPower, powerForMotor, currentAngle, deltaAngle, deltaTime,
+              -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0,
+            DataCollection.boolData);  
+            Robot.dataCollection.logData.add(data);
+          }
+            
+          Timer.delay(INTAKE_THREAD_PERIOD);
+
+        
+        }//end of while true
+              
+      });
+      intakeThread.start();
     
     }//end of intakeControl();
 
@@ -403,7 +412,7 @@ public class CatzIntake {
     *----------------------------------------------------------------------------------------*/
     public void intakePivotDeploy(){
 
-      intakePivotMode = INTAKE_PIVOT_MODE_DEPLOY_CALC;
+      intakePivotMode = INTAKE_PIVOT_MODE_DEPLOY;
 
      //intakePivotMotor.selectProfileSlot(INTAKE_UP_SLOT, 0);
      //intakePivotMotor.set(ControlMode.Position,INTAKE_PIVOT_DEPLOY_ROTATION);
@@ -413,7 +422,7 @@ public class CatzIntake {
     }
 
     public void intakePivotStow(){
-    
+      System.out.println("method stow reach");
       intakePivotMode = INTAKE_PIVOT_MODE_STOW_CALC;
       //intakePivotMotor.set(INTAKE_PIVOT_STOW_POWER);
     }

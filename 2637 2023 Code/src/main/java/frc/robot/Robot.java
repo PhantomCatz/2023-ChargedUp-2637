@@ -49,15 +49,18 @@ public class Robot extends TimedRobot {
 
   private final int XBOX_DRV_PORT = 0;
   private final int XBOX_AUX_PORT = 1;
+
   private final int DPAD_UP = 0;
   private final int DPAD_DN = 180;
   private final int DPAD_LT = 270;
   private final int DPAD_RT = 90;
 
+  // put into mechanism classes 
   private final boolean DEPLOYED = true;
   private final boolean STOWED   = false;
   public boolean elevatorState = STOWED;
-  public boolean intakeState   = STOWED; 
+  public boolean intakeState   = STOWED; // 
+
   private double steerAngle = 0.0;
   private double drivePower = 0.0;
   private double turnPower  = 0.0;
@@ -66,7 +69,8 @@ public class Robot extends TimedRobot {
   /*
    * For autobalancing
   */
-  private final double OFFSET_DELAY = 0.5;
+  private final double OFFSET_DELAY = 0.5;    // put into mechanism classes
+
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -75,6 +79,9 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit()
   {
+    navX = new AHRS();
+    navX.reset();
+
     xboxDrv = new XboxController(XBOX_DRV_PORT);
     xboxAux = new XboxController(XBOX_AUX_PORT);
 
@@ -87,9 +94,7 @@ public class Robot extends TimedRobot {
     paths          = new CatzAutonomousPaths();
     elevator       = new CatzElevator();
 
-    navX = new AHRS();
-    navX.reset();
-    navX.setAngleAdjustment(-navX.getYaw());
+    navX.setAngleAdjustment(-navX.getYaw());  //TBD - What is this for?
 
     dataArrayList = new ArrayList<CatzLog>();
     dataCollection.dataCollectionInit(dataArrayList);
@@ -108,6 +113,8 @@ public class Robot extends TimedRobot {
   public void robotPeriodic()
   {
     drivetrain.updateShuffleboard();
+
+    //For each mechanism - debug and comp
     SmartDashboard.putNumber("NavX", navX.getAngle());
     SmartDashboard.putNumber("Joystick", steerAngle);
 
@@ -128,6 +135,7 @@ public class Robot extends TimedRobot {
   public void autonomousInit()
   {
     drivetrain.setBrakeMode();
+
     dataCollection.setLogDataID(dataCollection.LOG_ID_DRV_STRAIGHT);
     currentTime.reset();
     currentTime.start();
@@ -163,6 +171,7 @@ public class Robot extends TimedRobot {
     currentTime.reset();
     currentTime.start();
 
+    dataCollection.setLogDataID(dataCollection.LOG_ID_INTAKE);
     dataCollection.startDataCollection();
   }
 

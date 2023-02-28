@@ -62,7 +62,7 @@ public class CatzElevator {
 
     private SparkMaxLimitSwitch elevLimitSwitchStowedPos;
     private SparkMaxLimitSwitch elevLimitSwitchScoringTop;
-    private DigitalInput elevLimitSwitchScoringMid;
+    private DigitalInput        elevLimitSwitchScoringMid;
 
     private final int ELEV_SCORING_MID_DIO_PORT = 5; // TBD
 
@@ -158,7 +158,7 @@ public class CatzElevator {
 
         elevatorSpoolMC.setSmartCurrentLimit(ELEV_SPOOL_MC_CURRENT_LIMIT);
 
-        elevLimitSwitchStowedPos = elevatorSpoolMC.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen);
+        elevLimitSwitchStowedPos  = elevatorSpoolMC.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen);
         elevLimitSwitchScoringTop = elevatorSpoolMC.getForwardLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen);
         elevLimitSwitchScoringMid = new DigitalInput(ELEV_SCORING_MID_DIO_PORT);
 
