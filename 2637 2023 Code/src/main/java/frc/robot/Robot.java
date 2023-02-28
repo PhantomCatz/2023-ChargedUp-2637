@@ -12,9 +12,13 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.Autonomous.CatzAutonomous;
+import frc.Autonomous.CatzAutonomousPaths;
 import frc.DataLogger.CatzLog;
 import frc.DataLogger.DataCollection;
+import frc.Mechanisms.CatzBalance;
 import frc.Mechanisms.CatzDrivetrain;
+import frc.Mechanisms.CatzElevator;
 import frc.Mechanisms.CatzIntake;
 
 /**
@@ -25,14 +29,21 @@ import frc.Mechanisms.CatzIntake;
  */
 public class Robot extends TimedRobot {
   
-  public CatzDrivetrain drivetrain;
+  public static CatzDrivetrain drivetrain;
 
-  private AHRS navX;
+  public static AHRS navX;
   
-  public static DataCollection dataCollection;
-  public static Timer currentTime;
-  public static CatzIntake intake;
+  public static DataCollection      dataCollection;
+  public static Timer               currentTime;
+  public static CatzIntake          intake;
+  public static CatzAutonomous      auton;
+  public static CatzConstants       constants;
+  public static CatzBalance         balance;
+  public static CatzAutonomousPaths paths;
+  public static CatzElevator        elevator;
+
   public ArrayList<CatzLog> dataArrayList;
+
   private XboxController xboxDrv;
   private XboxController xboxAux;
 
@@ -52,6 +63,11 @@ public class Robot extends TimedRobot {
   private double turnPower  = 0.0;
   private double gyroAngle  = 0.0;
 
+  /*
+   * For autobalancing
+  */
+  private final double OFFSET_DELAY = 0.5;
+
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -62,10 +78,14 @@ public class Robot extends TimedRobot {
     xboxDrv = new XboxController(XBOX_DRV_PORT);
     xboxAux = new XboxController(XBOX_AUX_PORT);
 
-    drivetrain = new CatzDrivetrain();
+    drivetrain     = new CatzDrivetrain();
     dataCollection = new DataCollection();
-    intake = new CatzIntake();
-    intake.intakeControl();
+    intake         = new CatzIntake();
+    auton          = new CatzAutonomous();
+    constants      = new CatzConstants();
+    balance        = new CatzBalance();
+    paths          = new CatzAutonomousPaths();
+    elevator       = new CatzElevator();
 
     navX = new AHRS();
     navX.reset();
@@ -108,8 +128,21 @@ public class Robot extends TimedRobot {
   public void autonomousInit()
   {
     drivetrain.setBrakeMode();
+    dataCollection.setLogDataID(dataCollection.LOG_ID_DRV_STRAIGHT);
+    currentTime.reset();
+    currentTime.start();
+    dataCollection.startDataCollection();
 
+    drivetrain.initializeOffsets();
+    Timer.delay(OFFSET_DELAY);
+
+    paths.determinePath();
+
+    //Path6();
+    
   }
+
+  
 
   /** This function is called periodically during autonomous. */
   @Override
@@ -124,6 +157,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() 
   {
+    paths.stop();
     drivetrain.setBrakeMode();
 
     currentTime.reset();
@@ -188,37 +222,33 @@ public class Robot extends TimedRobot {
       }
       else
       {
-        intake.intakeMode = intake.INTAKE_MODE_DEPLOY_START;
+        intake.intakePivotDeploy();
         intakeState = DEPLOYED;
       }
        
     }
     else if(xboxDrv.getRightStickButton())
     {
-      intake.intakeMode = intake.INTAKE_MODE_STOW_START;
+      intake.intakePivotStow();
       intakeState = STOWED;
     }
 
-    /*   
-    leftTrigger-->control rollerOut
-    if (xbox.getLeftTriggerAxis() > 0.2)
+    
+    //leftTrigger-->control rollerOut
+    if (xboxDrv.getLeftTriggerAxis() > 0.2)
     {
-      if(intake.intakeDeployed == true)
-      {
-        intake.intakeRollerOut();    
-      }
-      intake.intakeRollerOut = true;
+      
+      intake.intakeRollerOut();    
+      
     }
     //rightTrigger-->control rollerIn
-    if (xbox.getLeftTriggerAxis() > 0.2)
+    if (xboxDrv.getLeftTriggerAxis() > 0.2)
     {
-      if(intake.intakeDeployed == true)
-      {
-        intake.intakeRollerIn();    
-      }
-      intake.intakeRollerIn = true;
+      
+      intake.intakeRollerIn();    
+      
     }
-    */
+    
 
 
     /*
@@ -270,6 +300,8 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
+      elevator.spoolStowedPos();
+      elevator.lowScoringPosition();
 
       //go to LOW scoring position
     }
@@ -280,6 +312,8 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
+      elevator.spoolMidScorePos();
+      elevator.midScoringPosition();
       //go to MID scoring position 
     }
     else if(xboxAux.getYButton())
@@ -289,17 +323,20 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
+      elevator.spoolTopScorePos();
+      elevator.highScoringPosition();
       //go to HIGH scoring position
     }
 
     /*
      * Elevator Controls Manual
     */
-    if(Math.abs(xboxAux.getRightY()) > 0.1 )
+    if(Math.abs(xboxAux.getRightY() )> 0.1 )
     {
+      elevator.manualExtension(xboxAux.getRightY());
       //manual raise/lower elevator
-      
     }
+    
     if(xboxAux.getPOV() == DPAD_UP)
     {
       if(intakeState == DEPLOYED)
@@ -307,13 +344,18 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
-      
+      elevator.manualPivotControl(0.3);
       //while pressed, deploy elevator
     
     }
     else if(xboxAux.getPOV() == DPAD_DN)
     {
-      //while pressed, retract elevator
+      //while pressed, pivot elevator
+      elevator.manualPivotControl(-0.3);
+    }
+    else
+    {
+      elevator.manualPivotControl(0.0);
     }
 
   /*
@@ -367,7 +409,7 @@ public class Robot extends TimedRobot {
   @Override
   public void testInit()
   {
-    drivetrain.initializeOffsets(navX);
+    drivetrain.initializeOffsets();
   }
 
   /** This function is called periodically during test mode. */
@@ -424,7 +466,7 @@ public class Robot extends TimedRobot {
       navX.setAngleAdjustment(-navX.getYaw());
     }
 
-    public double getGyroAngle()
+    public static double getGyroAngle()
     {
       return navX.getAngle();
     }

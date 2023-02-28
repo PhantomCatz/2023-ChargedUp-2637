@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import javax.xml.crypto.Data;
 
-import com.kauailabs.navx.frc.AHRS;
+
 
 
 public class CatzDrivetrain 
@@ -60,9 +60,9 @@ public class CatzDrivetrain
         RT_BACK_MODULE.resetMagEnc();
     }
 
-    public void initializeOffsets(AHRS navX)
+    public void initializeOffsets()
     {
-        navX.setAngleAdjustment(-navX.getYaw());
+        Robot.navX.setAngleAdjustment(-Robot.navX.getYaw());
 
         LT_FRNT_MODULE.initializeOffset();
         LT_BACK_MODULE.initializeOffset();
@@ -226,5 +226,39 @@ public class CatzDrivetrain
         LT_BACK_MODULE.updateShuffleboard();
         RT_FRNT_MODULE.updateShuffleboard();
         RT_BACK_MODULE.updateShuffleboard();
+    }
+
+    /*
+     * Auto Balance stuff
+     */
+
+     public double getAveragePosition(){
+        return (LT_FRNT_MODULE.getDriveMotorPosition() + LT_BACK_MODULE.getDriveMotorPosition() + RT_FRNT_MODULE.getDriveMotorPosition() + RT_BACK_MODULE.getDriveMotorPosition()) / 4.0;
+    }
+
+    public void reverseAllDrive(Boolean reverse){
+        LT_FRNT_MODULE.reverseDrive(reverse);
+        LT_BACK_MODULE.reverseDrive(reverse);
+        RT_FRNT_MODULE.reverseDrive(reverse);
+        RT_BACK_MODULE.reverseDrive(reverse);
+    }
+
+    public void zeroGyro()
+    {
+        Robot.navX.setAngleAdjustment(-Robot.navX.getYaw());
+    }
+
+    public double getGyroAngle()
+    {
+        return Robot.navX.getAngle();
+    }
+
+    public void autoDrive(double power){
+        LT_FRNT_MODULE.setWheelAngle(0, 0);
+        LT_BACK_MODULE.setWheelAngle(0, 0);
+        RT_FRNT_MODULE.setWheelAngle(0, 0);
+        RT_BACK_MODULE.setWheelAngle(0, 0);
+
+        setDrivePower(power);
     }
 }

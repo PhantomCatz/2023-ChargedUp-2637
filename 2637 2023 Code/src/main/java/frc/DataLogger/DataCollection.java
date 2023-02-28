@@ -54,12 +54,12 @@ public class DataCollection
 
     private final String LOG_HDR_SWERVE_STEERING = "time,target,lf-angle,lf-err,lf-flip-err,lb-angle,lb-err,lb-flip-err,rf-angle,rf-err,rf-flip-err,rb-angle,rb-err,rb-flip-err";
     private final String LOG_HDR_SWERVE_DRIVING = "time,target,lf-angle,lf-dist,lf-vel,lb-angle,lb-dist,lb-vel,rf-angle,rf-dist,rf-vel,rb-angle,rb-dist,rb-vel,lf-error";
-    private final String LOG_HDR_BALANCE_MOD = "1,2,3,4";
-    private final String LOG_HDR_INTAKE = "";
+    private final String LOG_HDR_BALANCE_MOD = "time,pitch,rate,power,pitchTerm,rateTerm,";
+    private final String LOG_HDR_INTAKE = "time,tar-ang-rt,tar-ang,fin-mtr-pwr,mtr-pwr,curr-ang,dt-ang,dt-time";
     private final String LOG_HDR_INDEXER = "";
     private final String LOG_HDR_ELEVATOR = "";
     private final String LOG_HDR_CLAW = "";
-    private final String LOG_HDR_DRV_STRAIGHT = "";
+    private final String LOG_HDR_DRV_STRAIGHT = "time,d_rem,enc_pos,power,angle_err,angle,rate,turn_power";
     private final String LOG_HDR_TURN_IN_PLACE = "";
 
     public String logStr;
