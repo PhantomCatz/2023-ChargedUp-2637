@@ -65,7 +65,7 @@ public class CatzAutonomousPaths
      */
     // drive.DriveStraight(distance, decelDist, )
     public CatzAutonomousPaths() 
-    {/* 
+    {
         if(all = true) 
         {
             foward = false;
@@ -92,7 +92,7 @@ public class CatzAutonomousPaths
         else 
         {
             all = true;
-        }*/
+        }
     }
 
     

@@ -33,6 +33,8 @@ public class CatzAutonomous
     private double prevTime = -1.0; // no big initial rate
     private double errorRate = 0;
     private Boolean backwards;
+    public double wheelPos = 0.0;
+    public double distance = 0.0;
 
     private Timer autonTimer;
     public CatzLog data;
@@ -42,8 +44,11 @@ public class CatzAutonomous
         autonTimer = new Timer();
     }
 
-    public void DriveStraight(double distance, double decelDistance, double maxSpeed, double wheelPos, double maxTime)
+    public void DriveStraight(double distance, double decelDistance, double maxSpeed,double wheelPos, double maxTime)
     { 
+        this.wheelPos = wheelPos;
+        this.distance = distance;
+
         startDriving = true;
 
         if(distance < 0)
@@ -83,7 +88,7 @@ public class CatzAutonomous
                 turnPower = -turnPower;
             }
 
-            Robot.drivetrain.translateTurn(wheelPos, targetPower, turnPower, Robot.getGyroAngle()); //TBD need to check
+            Robot.drivetrain.translateTurn(wheelPos, targetPower, turnPower, Robot.drivetrain.getGyroAngle()); //TBD need to check
             Timer.delay(DRIVE_THREAD_PERIOD);
 
             prevTime = time;
@@ -121,5 +126,15 @@ public class CatzAutonomous
         {
             return in;
         }
+    }
+
+    public double getWheelPos()
+    {
+        return wheelPos;
+    }
+
+    public double getDistance()
+    {
+        return distance;
     }
 }

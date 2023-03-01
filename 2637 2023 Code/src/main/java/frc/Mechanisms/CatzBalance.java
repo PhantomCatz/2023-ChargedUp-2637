@@ -12,7 +12,7 @@ public class CatzBalance
     public static double prevTime = 0.0;
     public static double time = 0.0;
 
-    public static Boolean startBalance = false;
+    public  Boolean startBalance = false;
 
     public static double prevPitchAngle = 0.0;
     public static double pitchAngle = 0.0;
