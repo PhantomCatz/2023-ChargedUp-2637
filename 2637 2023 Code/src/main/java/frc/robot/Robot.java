@@ -24,6 +24,7 @@ import frc.Mechanisms.CatzBalance;
 import frc.Mechanisms.CatzDrivetrain;
 import frc.Mechanisms.CatzElevator;
 import frc.Mechanisms.CatzIntake;
+import frc.Mechanisms.CatzIndexer;
 import frc.Mechanisms.CatzRGB;
 
 /**
@@ -91,16 +92,17 @@ public class Robot extends TimedRobot {
   public static CatzDrivetrain      drivetrain;
   public static CatzIntake          intake;
   public static CatzElevator        elevator;
+  public static CatzIndexer         indexer; 
 
 
   public static Timer               currentTime;      //TBD - what is this intended for?
 
 
   // put into mechanism classes 
-  private final boolean DEPLOYED = true;
-  private final boolean STOWED   = false;
-  public boolean elevatorState = STOWED;
-  public boolean intakeState   = STOWED;
+  public static final boolean DEPLOYED = true;
+  public static final boolean STOWED   = false;
+  public static boolean elevatorState = STOWED;
+  public static  boolean intakeState   = STOWED;
 
   /*
    * For autobalancing
@@ -156,6 +158,7 @@ public class Robot extends TimedRobot {
     drivetrain     = new CatzDrivetrain();
     intake         = new CatzIntake();
     elevator       = new CatzElevator();
+    indexer        = new CatzIndexer();
 
 
     currentTime = new Timer();
@@ -193,6 +196,14 @@ public class Robot extends TimedRobot {
       }
       else
       {
+        if(indexer.isConeDetected == true)
+        {
+          coneOnboard = true;
+        }
+        else if(indexer.isCubeDetected == true)
+        {
+          cubeOnboard = true;
+        }
 
       }
 
@@ -301,53 +312,19 @@ public class Robot extends TimedRobot {
     //  Intake
     //----------------------------------------------------------------------------------------------
     //TBD - move logic to class method; this removes multiple gets and duplicate logic
-    intake.cmdProcDeploy(xboxDrv.getLeftStickButton());
-    intake.cmdProcStow  (xboxDrv.getRightStickButton());
+    intake.procCmdDeploy(xboxDrv.getLeftStickButton(),    //Deploy
+                         xboxDrv.getRightStickButton() ); //Stow
 
-    intake.cmdProcRollerIn (xboxDrv.getRightTriggerAxis());
-    intake.cmdProcRollerOut(xboxDrv.getLeftTriggerAxis());
-
-
-    if(xboxDrv.getLeftStickButton())
-    {
-      if(elevatorState == DEPLOYED)
-      {
-        //flash colors indicating that you can't deploy
-      }
-      else
-      {
-        intake.intakePivotDeploy();
-        intakeState = DEPLOYED;
-      }
-    }
-
-
-    else if(xboxDrv.getRightStickButton())
-    {
-      intake.intakePivotStow();
-      intakeState = STOWED;
-    }
-
-    
-    //leftTrigger-->control rollerOut
-    if (xboxDrv.getLeftTriggerAxis() > 0.2)
-    { 
-      intake.intakeRollerOut();     
-    }
-
-    //rightTrigger-->control rollerIn
-    if (xboxDrv.getLeftTriggerAxis() > 0.2)     //TBD - COPY / PASTE Error
-    {
-      intake.intakeRollerIn();      
-    }
+    intake.procCmdRoller(xboxDrv.getRightTriggerAxis(),   //Roller In
+                         xboxDrv.getLeftTriggerAxis() );  //Roller Out
 
 
     //----------------------------------------------------------------------------------------------
     //  Elevator - Automated
     //----------------------------------------------------------------------------------------------
-    elevator.cmdProcGoToPositionScoreLow (xboxAux.getAButton());
+    /*elevator.cmdProcGoToPositionScoreLow (xboxAux.getAButton());
     elevator.cmdProcGoToPositionScoreMid (xboxAux.getBButton());
-    elevator.cmdProcGoToPositionScoreHigh(xboxAux.getYButton());
+    elevator.cmdProcGoToPositionScoreHigh(xboxAux.getYButton());*/
 
     //TBD HOW DO WE GO TO STOW POSITION???
 
