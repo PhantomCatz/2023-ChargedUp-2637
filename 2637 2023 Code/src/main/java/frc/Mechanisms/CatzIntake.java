@@ -7,6 +7,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import frc.DataLogger.CatzLog;
 import frc.DataLogger.DataCollection;
 import frc.robot.Robot;
@@ -14,24 +15,24 @@ import frc.robot.Robot;
 public class CatzIntake {
 
   private Thread intakeThread;
-  private final double INTAKE_THREAD_PERIOD  = 0.02;
+  private final double INTAKE_THREAD_PERIOD  = 0.020;
   
   public CatzLog data;
 
   //------------------------------------------------------------------------------------------------
+  //
   //  Roller
+  //
   //------------------------------------------------------------------------------------------------
   private WPI_TalonFX intakeRollerMotor;
 
-  private final int    INTAKE_ROLLER_MC_ID        = 11; 
+  private final int    INTAKE_ROLLER_MC_ID           = 11; 
 
-  private final double INTAKE_ROLLER_MOTOR_POWER       = -1.0;
-  private final double OUTTAKE_ROLLER_MOTOR_POWER      =  1.0;
-  private final double INTAKE_MOTOR_POWER_OFF          =  0.0;
+  private final double INTAKE_MOTOR_POWER_ROLLER_IN  = -1.0;
+  private final double INTAKE_MOTOR_POWER_ROLLER_OUT =  1.0;
+  private final double INTAKE_MOTOR_POWER_ROLLER_OFF =  0.0;
 
-  private final double INTAKE_MOTOR_POWER_ROLLER_IN    = -1.0;  //TBD
-  private final double INTAKE_MOTOR_POWER_ROLLER_OUT   =  1.0;
-  private final double INTAKE_MOTOR_POWER_ROLLER_OFF   =  0.0;
+  private final double INTAKE_INPUT_THRESHOLD = 0.2;
 
   public final int INTAKE_ROLLER_OFF = 0;  //TBD to see if still needed
   public final int INTAKE_ROLLER_IN  = 1;
@@ -42,7 +43,9 @@ public class CatzIntake {
 
 
   //------------------------------------------------------------------------------------------------
-  //  Pivot
+  //
+  //  Deploy/Stow and Pivot
+  //
   //------------------------------------------------------------------------------------------------
   private WPI_TalonFX intakePivotMotor;
   
@@ -57,29 +60,6 @@ public class CatzIntake {
   private SupplyCurrentLimitConfiguration EncCurrentLimit;
 
 
-  private final int    INTAKE_UP_SLOT   = 0;        //TBD - up should be stow, down should be deploy
-  private final double PID_INTAKE_UP_KP = 0.08; 
-  private final double PID_INTAKE_UP_KI = 0.00;
-  private final double PID_INTAKE_UP_KD = 0.00;
-
-  private final int    INTAKE_DOWN_SLOT = 1;
-  private final double PID_INTAKE_DOWN_KP = 0.035;
-  private final double PID_INTAKE_DOWN_KI = 0.00;
-  private final double PID_INTAKE_DOWN_KD = 0.00;
-
-  private final double INTAKE_PIVOT_PINION_GEAR = 11.0;
-  private final double INTAKE_PIVOT_SPUR_GEAR   = 56.0;  
-  private final double INTAKE_PIVOT_GEAR_RATIO  =INTAKE_PIVOT_SPUR_GEAR/INTAKE_PIVOT_PINION_GEAR;
-
-  private final double INTAKE_PIVOT_SPROCKET_1  = 16.0;
-  private final double INTAKE_PIVOT_SPROCKET_2  = 56.0;
-  private final double INTAKE_PIVOT_SPROCKET_RATIO  = INTAKE_PIVOT_SPROCKET_2/INTAKE_PIVOT_SPROCKET_1;
-  
-  private final double INTAKE_PIVOT_FINAL_RATIO = INTAKE_PIVOT_GEAR_RATIO*INTAKE_PIVOT_SPROCKET_RATIO;
-
-
-  private double deploymentMotorRawPosition;
-
   //Pivot status
   private  final int INTAKE_PIVOT_MODE_NULL                = 0;
   private  final int INTAKE_PIVOT_MODE_DEPLOY              = 1;
@@ -89,53 +69,76 @@ public class CatzIntake {
   private  final int INTAKE_PIVOT_MODE_STOW_CALC           = 14;
   private  final int INTAKE_MODE_STOW_HOLD                 = 5;
 
-//Pivot IntakeMode initialization
+  //Pivot IntakeMode initialization
   private int intakePivotMode = INTAKE_PIVOT_MODE_NULL;
 
 
+  //------------------------------------------------------------------------------------------------
+  //  Gear ratio
+  //------------------------------------------------------------------------------------------------
+  private final double INTAKE_PIVOT_PINION_GEAR = 11.0;
+  private final double INTAKE_PIVOT_SPUR_GEAR   = 56.0;  
+  private final double INTAKE_PIVOT_GEAR_RATIO  =INTAKE_PIVOT_SPUR_GEAR/INTAKE_PIVOT_PINION_GEAR;
+
+  private final double INTAKE_PIVOT_SPROCKET_1  = 16.0;
+  private final double INTAKE_PIVOT_SPROCKET_2  = 56.0;
+  private final double INTAKE_PIVOT_SPROCKET_RATIO  = INTAKE_PIVOT_SPROCKET_2/INTAKE_PIVOT_SPROCKET_1;
+  
+  private final double INTAKE_PIVOT_FINAL_RATIO = INTAKE_PIVOT_GEAR_RATIO*INTAKE_PIVOT_SPROCKET_RATIO;
+  
+  
+  //------------------------------------------------------------------------------------------------
+  //  Angle Definitions
+  //------------------------------------------------------------------------------------------------
   private final static double INTAKE_STOWED_ANGLE   =  0.197;   //TBD - Angles are prototype only and will change with final hardstops
   private final static double INTAKE_DEPLOYED_ANGLE = 85.827;   //TBD angle need correct
 
   private final static double INTAKE_STOW_INITIAL_ANGLE   = INTAKE_DEPLOYED_ANGLE;
   private final static double INTAKE_DEPLOY_INITIAL_ANGLE = INTAKE_STOWED_ANGLE;
 
-  private final double INTAKE_DEPLOY_SET_POSITION_START_ANGLE = 25.0;
-  private final static double INTAKE_STOW_REDUCE_POWER_ANGLE  = 55.0;
 
+  //------------------------------------------------------------------------------------------------
+  //  Motion Magic Approach
+  //------------------------------------------------------------------------------------------------
+  private final int    INTAKE_STOW_SLOT     = 0;        //TBD - up should be stow, down should be deploy; Also don't need PID in name
+  private final double INTAKE_STOW_KP   = 0.08; 
+  private final double INTAKE_STOW_KI   = 0.00;
+  private final double INTAKE_STOW_KD   = 0.00;
+
+  private final int    INTAKE_DEPLOY_SLOT   = 1;
+  private final double INTAKE_DEPLOY_KP = 0.035;
+  private final double INTAKE_DEPLOY_KI = 0.00;
+  private final double INTAKE_DEPLOY_KD = 0.00;
+
+  private final static double INTAKE_DEPLOY_SET_POSITION_START_ANGLE = 25.0;
+  private final static double INTAKE_STOW_REDUCE_POWER_ANGLE         = 55.0;
 
   private final double INTAKE_DEPLOYED_ANGLE_COUNTS   = -(INTAKE_DEPLOYED_ANGLE * (INTAKE_PIVOT_REL_ENCODER_CPR / 360.0) * INTAKE_PIVOT_FINAL_RATIO);
   private final double INTAKE_STOWED_ANGLE_COUNTS     =  (INTAKE_STOWED_ANGLE   * (INTAKE_PIVOT_REL_ENCODER_CPR / 360.0) * INTAKE_PIVOT_FINAL_RATIO);
   
-  private final double INTAKE_SOFTLIMIT_OFFSET_ANGLE        = 5.0;  //TBD
+  private final double INTAKE_SOFTLIMIT_OFFSET_ANGLE        = 0.0;  //Setting to zero assuming deploy code will not run motor into the hard-stops
   private final double INTAKE_SOFTLIMIT_OFFSET_ANGLE_COUNTS = (INTAKE_SOFTLIMIT_OFFSET_ANGLE * (INTAKE_PIVOT_REL_ENCODER_CPR / 360.0) * INTAKE_PIVOT_FINAL_RATIO);
+
   private final double INTAKE_SOFTLIMIT_MAX_ANGLE_COUNTS    = INTAKE_DEPLOYED_ANGLE_COUNTS - INTAKE_SOFTLIMIT_OFFSET_ANGLE_COUNTS;
   private final double INTAKE_SOFTLIMIT_MIN_ANGLE_COUNTS    = INTAKE_STOWED_ANGLE_COUNTS   + INTAKE_SOFTLIMIT_OFFSET_ANGLE_COUNTS;
 
-  private final double INTAKE_PIVOT_DEPLOY_POWER = -0.2;
 
-  public static double Kp = 0.01;               //TBD Constant
-  public static double Kd = 0.001;              //TBD Constant
-
-  public final double INTAKE_DEPLOYMENT_TIME = 0.26;
-
-
-  private final int INTAKE_PIVOT_STOWED = 0; // MAY DELETE
-  private final int INTAKE_PIVOT_DEPLOYED = 1;
-  private final int INTAKE_PIVOT_IN_TRANSIT = 2;
-  private final int INTAKE_PIVOT_UNINITIALIZED = -999;
-  private int intakePivotState = INTAKE_PIVOT_STOWED;
-
-
+  //------------------------------------------------------------------------------------------------
+  //  5th order polynomial approach
+  //------------------------------------------------------------------------------------------------
   //coeffients
+  public  final double DEG2RAD = Math.PI / 180.0;
 
-  public final double DEG2RAD = Math.PI / 180.0;
+  private final double INTAKE_STOW_CALC_Kp    = 0.010;
+  private final double INTAKE_STOW_CALC_Kd    = 0.001;
+  private final double INTAKE_DEPLOYMENT_TIME = 0.26;
 
   public final double COEFF1  =  10.0;
   public final double COEFF2  = -15.0;
   public final double COEFF3  =   6.0;
 
   public final double INTAKE_INERTIA    = 0.61;  //kg * m^2 
-  public final double INTAKE_MAX_TORCUE = 5.84;     //TBD spelling
+  public final double INTAKE_MAX_TORQUE = 5.84;
 
   public final double B_DEPLOY  = (INTAKE_DEPLOYED_ANGLE - INTAKE_DEPLOY_INITIAL_ANGLE) / INTAKE_DEPLOYMENT_TIME;;
   public final double A3_DEPLOY = COEFF1 * B_DEPLOY / INTAKE_DEPLOYMENT_TIME / INTAKE_DEPLOYMENT_TIME;
@@ -147,16 +150,24 @@ public class CatzIntake {
   public final double A4_STOW   = COEFF2 * B_STOW   / INTAKE_DEPLOYMENT_TIME / INTAKE_DEPLOYMENT_TIME / INTAKE_DEPLOYMENT_TIME;  
   public final double A5_STOW   = COEFF3 * B_STOW   / INTAKE_DEPLOYMENT_TIME / INTAKE_DEPLOYMENT_TIME / INTAKE_DEPLOYMENT_TIME / INTAKE_DEPLOYMENT_TIME;
   
-  public final double ALPHA3_DEPLOY = (A3_DEPLOY * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORCUE;
-  public final double ALPHA4_DEPLOY = (A4_DEPLOY * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORCUE;
-  public final double ALPHA5_DEPLOY = (A5_DEPLOY * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORCUE;
+  public final double ALPHA3_DEPLOY = (A3_DEPLOY * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORQUE;
+  public final double ALPHA4_DEPLOY = (A4_DEPLOY * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORQUE;
+  public final double ALPHA5_DEPLOY = (A5_DEPLOY * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORQUE;
 
-  public final double ALPHA3_STOW   = (A3_STOW   * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORCUE;
-  public final double ALPHA4_STOW   = (A4_STOW   * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORCUE;
-  public final double ALPHA5_STOW   = (A5_STOW   * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORCUE;
+  public final double ALPHA3_STOW   = (A3_STOW   * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORQUE;
+  public final double ALPHA4_STOW   = (A4_STOW   * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORQUE;
+  public final double ALPHA5_STOW   = (A5_STOW   * DEG2RAD * INTAKE_INERTIA) / INTAKE_PIVOT_FINAL_RATIO / INTAKE_MAX_TORQUE;
 
 
-  public boolean firstTimeThrough = true;
+  private final double INTAKE_PIVOT_DEPLOY_POWER = -0.2;    //TBD May not need depending on final implementation
+
+
+  private final int INTAKE_PIVOT_STOWED = 0;       //TBD  MAY DELETE
+  private final int INTAKE_PIVOT_DEPLOYED = 1;
+  private final int INTAKE_PIVOT_IN_TRANSIT = 2;
+  private final int INTAKE_PIVOT_UNINITIALIZED = -999;
+  private int intakePivotState = INTAKE_PIVOT_STOWED;
+
 
   public double powerForMotor;
   public double finalMotorPower   = 0.0;
@@ -172,6 +183,8 @@ public class CatzIntake {
   public double time      = Timer.getFPGATimestamp();     //TBD - why this method? why are we saving this time? normally used with pivotTimer
   public double timeOld   = 0.0;
   public double deltaTime = 0.0;
+
+  private double deploymentMotorRawPosition;
 
 
 //---------------------------------------------definitions part end--------------------------------------------------------------
@@ -199,13 +212,13 @@ public class CatzIntake {
     intakePivotMotor.setNeutralMode(NeutralMode.Brake);
     intakePivotMotor.configSupplyCurrentLimit(EncCurrentLimit);
   
-    intakePivotMotor.config_kP(INTAKE_UP_SLOT, PID_INTAKE_UP_KP);
-    intakePivotMotor.config_kI(INTAKE_UP_SLOT, PID_INTAKE_UP_KI);
-    intakePivotMotor.config_kD(INTAKE_UP_SLOT, PID_INTAKE_UP_KD);
+    intakePivotMotor.config_kP(INTAKE_STOW_SLOT, INTAKE_STOW_KP);
+    intakePivotMotor.config_kI(INTAKE_STOW_SLOT, INTAKE_STOW_KI);
+    intakePivotMotor.config_kD(INTAKE_STOW_SLOT, INTAKE_STOW_KD);
 
-    intakePivotMotor.config_kP(INTAKE_DOWN_SLOT, PID_INTAKE_DOWN_KP);
-    intakePivotMotor.config_kI(INTAKE_DOWN_SLOT, PID_INTAKE_DOWN_KI);
-    intakePivotMotor.config_kD(INTAKE_DOWN_SLOT, PID_INTAKE_DOWN_KD);
+    intakePivotMotor.config_kP(INTAKE_DEPLOY_SLOT, INTAKE_DEPLOY_KP);
+    intakePivotMotor.config_kI(INTAKE_DEPLOY_SLOT, INTAKE_DEPLOY_KI);
+    intakePivotMotor.config_kD(INTAKE_DEPLOY_SLOT, INTAKE_DEPLOY_KD);
 
     intakePivotMotor.configForwardSoftLimitThreshold(INTAKE_SOFTLIMIT_MIN_ANGLE_COUNTS);
     intakePivotMotor.configReverseSoftLimitThreshold(INTAKE_SOFTLIMIT_MAX_ANGLE_COUNTS);
@@ -220,58 +233,60 @@ public class CatzIntake {
   }
 
 
-//---------------------------------------------------Roller--------------------------------------------------------
-   
-
-  public void intakeRollerIn()
-  {
-      intakeRollerMotor.set(ControlMode.PercentOutput,INTAKE_ROLLER_MOTOR_POWER);
+    /*-----------------------------------------------------------------------------------------
+    *  
+    *  Roller Methods
+    *
+    *----------------------------------------------------------------------------------------*/
+    public void intakeRollerIn()
+    {
+      intakeRollerMotor.set(ControlMode.PercentOutput,INTAKE_MOTOR_POWER_ROLLER_IN);
       intakeRollerState = INTAKE_ROLLER_IN;
-  }
+    }
 
-  public void intakeRollerOut()
-  {
-      intakeRollerMotor.set(ControlMode.PercentOutput,OUTTAKE_ROLLER_MOTOR_POWER);
-      intakeRollerState = INTAKE_ROLLER_OUT;
-  }
-
-
-  public void intakeRollerOff()
-  {
-      intakeRollerMotor.set(ControlMode.PercentOutput,INTAKE_MOTOR_POWER_OFF);
-      intakeRollerState = INTAKE_ROLLER_OFF;
-  }
-
-
-  public void procCmdRoller(double xboxValueIn, double xboxValueOut)
-  {
-    if (xboxValueIn > 0.2)  //TBD CONSTANT
+    public void intakeRollerOut()
     {
-      intakeRollerIn();      
+        intakeRollerMotor.set(ControlMode.PercentOutput,INTAKE_MOTOR_POWER_ROLLER_OUT);
+        intakeRollerState = INTAKE_ROLLER_OUT;
     }
-    else if (xboxValueOut > 0.2)
-    { 
-      intakeRollerOut();     
-    }
-    else
+
+
+    public void intakeRollerOff()
     {
-      intakeRollerOff();
+        intakeRollerMotor.set(ControlMode.PercentOutput,INTAKE_MOTOR_POWER_ROLLER_OFF);
+        intakeRollerState = INTAKE_ROLLER_OFF;
     }
-  }
 
 
+    public void procCmdRoller(double xboxValueIn, double xboxValueOut)
+    {
+      if (xboxValueIn > INTAKE_INPUT_THRESHOLD)
+      {
+        intakeRollerIn();      
+      }
+      else if (xboxValueOut > INTAKE_INPUT_THRESHOLD)
+      { 
+        intakeRollerOut();     
+      }
+      else
+      {
+        intakeRollerOff();
+      }
+    }
 
-//------------------------------------------------Pivot--------------------------------------------------------------
     
+
+    /*-----------------------------------------------------------------------------------------
+    *  
+    *  Deploy/Stow Methods
+    *
+    *----------------------------------------------------------------------------------------*/
     public void intakeControl()
     {
-      System.out.println("mthod intakecontrol in");
       intakeThread = new Thread(() ->
       { 
         while(true)
         {
-          System.out.println("+");
-          //int currentAngle = (int)getIntakeDeployPositionDegrees();
           switch(intakePivotMode)
           {
               case INTAKE_PIVOT_MODE_NULL:
@@ -280,10 +295,11 @@ public class CatzIntake {
                
               case INTAKE_PIVOT_MODE_DEPLOY:
 
-                currentAngle = getIntakeDeployPositionDegrees();
+                currentAngle = getIntakePositionDegrees();
+
                 if(currentAngle > INTAKE_DEPLOY_SET_POSITION_START_ANGLE )
                 {
-                  intakePivotMotor.set(ControlMode.Position, INTAKE_DEPLOYED_ANGLE_COUNTS);
+                  intakePivotMotor.set(ControlMode.Position, INTAKE_DEPLOYED_ANGLE_COUNTS); //TBD review
                   //intakePivotMode = INTAKE_PIVOT_MODE_NULL;
                  // intakePivotMotor.set(ControlMode.MotionMagic, INTAKE_PIVOT_DEPLOY_ROTATION);
                 }
@@ -299,7 +315,7 @@ public class CatzIntake {
                   firstTimeThrough = false;
                 }
                     
-                currentAngle = getIntakeDeployPositionDegrees();
+                currentAngle = getIntakePositionDegrees();
                 time = pivotTimer.get();
                 deltaAngle = currentAngle - angleOld;
                 if(time > 0.01)
@@ -310,19 +326,19 @@ public class CatzIntake {
                 {
                   deltaTime = 100;//this is for initial time
                 }
-                angleOld = getIntakeDeployPositionDegrees();
+                angleOld = getIntakePositionDegrees();
                 timeOld = time;
                 angleDot = deltaAngle/deltaTime;
                 powerForMotor = ALPHA3_DEPLOY * Math.pow(time , 3) - ALPHA4_DEPLOY *Math.pow(time , 4) + ALPHA5_DEPLOY *Math.pow(time , 5);
                 
                 targetAngle = (A3_DEPLOY*Math.pow(time , 3)) + (A4_DEPLOY*Math.pow(time , 4)) + (A5_DEPLOY*Math.pow(time , 5));
                 targetAngularRate = (3 * A3_DEPLOY * Math.pow(time , 2)) + (4 * A4_DEPLOY * Math.pow(time , 3)) + (5 * A5_DEPLOY * Math.pow(time , 4));
-                finalMotorPower = powerForMotor + Kp*(targetAngle - getIntakeDeployPositionDegrees()) + Kd*(targetAngularRate - deltaAngle/deltaTime); 
+                finalMotorPower = powerForMotor + Kp*(targetAngle - getIntakePositionDegrees()) + Kd*(targetAngularRate - deltaAngle/deltaTime); 
                 finalMotorPower = -finalMotorPower;
                 System.out.println("in deploy" + finalMotorPower);
                 intakePivotMotor.set(ControlMode.PercentOutput,finalMotorPower);
                   
-                currentAngle = getIntakeDeployPositionDegrees();
+                currentAngle = getIntakePositionDegrees();
                 if(currentAngle > INTAKE_DEPLOY_FINAL_ANGLE)
                 {
                   firstTimeThrough = true;
@@ -337,15 +353,9 @@ public class CatzIntake {
 */
               
               case INTAKE_PIVOT_MODE_STOW_CALC:
-                System.out.println("in stowcalc");
 
-                if(firstTimeThrough == true)    //TBD - not sure we need this
-                {
-                  pivotTimer.reset();
-                  firstTimeThrough = false;
-                }
 
-                currentAngle = getIntakeDeployPositionDegrees();
+                currentAngle = getIntakePositionDegrees();
                 deltaAngle   = currentAngle - angleOld;
 
                 time         = pivotTimer.get();
@@ -359,32 +369,33 @@ public class CatzIntake {
                   deltaTime = 100;// this is for initial time/ to provent a s       TBD - this doesn't seem right
                 }
 
-                angleOld = getIntakeDeployPositionDegrees();    //TBD This doesn't make sense
+                angleOld = getIntakePositionDegrees();
 
-                timeOld = time;//Math.pow(4,2)
+                timeOld = time;//Math.pow(4,2)  TBD
                 
                 angleDot = deltaAngle / deltaTime;
 
-                //TBD - can we calculate all of the Math.pow() terms once and just use?  Also make parens consistent
-                powerForMotor     =  ALPHA3_STOW * (Math.pow(time , 3)) -  ALPHA4_STOW * (Math.pow(time , 4)) +  ALPHA5_STOW * (Math.pow(time , 5)); 
+                //TBD - can we calculate some of the Math.pow() terms once and just use?  Also make parens consistent
+                double timePow3 = Math.pow(time, 3);
+                double timePow4 = Math.pow(time, 4);
+                double timePow5 = Math.pow(time, 5);
 
-                targetAngle       = (    A3_STOW *  Math.pow(time , 3)) + (    A4_STOW *  Math.pow(time , 4)) + (    A5_STOW *  Math.pow(time , 5));
+                powerForMotor     = (ALPHA3_STOW * timePow3         ) - (ALPHA4_STOW * timePow4) + (ALPHA5_STOW * timePow5); 
+                targetAngle       = (    A3_STOW * timePow3         ) + (    A4_STOW * timePow4) + (    A5_STOW * timePow5);
+                targetAngularRate = (3 * A3_STOW * Math.pow(time, 2)) + (4 * A4_STOW * timePow3) + (5 * A5_STOW * timePow4);
 
-                targetAngularRate = (3 * A3_STOW *  Math.pow(time , 2)) + (4 * A4_STOW *  Math.pow(time , 3)) + (5 * A5_STOW *  Math.pow(time , 4));
-
-                finalMotorPower = powerForMotor + Kp * (targetAngle       - getIntakeDeployPositionDegrees()) + //TBD why not use currentAngle? 
-                                                  Kd * (targetAngularRate - deltaAngle / deltaTime); //TBD - why not use angleDot?
+                finalMotorPower = powerForMotor + INTAKE_STOW_CALC_Kp * (targetAngle       - getIntakePositionDegrees()) + //TBD why not use currentAngle? 
+                                                  INTAKE_STOW_CALC_Kd * (targetAngularRate - deltaAngle / deltaTime); //TBD - why not use angleDot?
                 finalMotorPower = -finalMotorPower;
                 System.out.println("finalMotor Power:" + finalMotorPower);
 
                 intakePivotMotor.set(ControlMode.PercentOutput,finalMotorPower);
 
-                currentAngle = getIntakeDeployPositionDegrees();        //TBD - This should be checked first
+                currentAngle = getIntakePositionDegrees();        //TBD - This should be checked first
                 if(currentAngle < INTAKE_STOW_REDUCE_POWER_ANGLE)       //TBD - This should be checked first
                 {
-                  firstTimeThrough = true;      //TBD - Init on entry not exit
                   timeOld = 0;
-                  intakePivotMode = INTAKE_MODE_STOW_HOLD;
+                  intakePivotMode = INTAKE_MODE_STOW_HOLD;  //TBD Set power to zero here and go to null
                 } 
               break;
 
@@ -393,49 +404,48 @@ public class CatzIntake {
               break;
 
               default:
-                intakePivotMotor.set(INTAKE_MOTOR_POWER_OFF);
+                intakePivotMotor.set(INTAKE_MOTOR_POWER_ROLLER_OFF);
                 intakeRollerOff();
               break;
 
           }   //eng of switch
 
-          if(DataCollection.chosenDataID.getSelected()== DataCollection.LOG_ID_INTAKE)
+          if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_INTAKE)
           {
-            data = new CatzLog(Robot.currentTime.get(),
-            targetAngularRate, targetAngle, finalMotorPower, powerForMotor, currentAngle, deltaAngle, deltaTime,
-              -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0,
-            DataCollection.boolData);  
+            //TBD Use the time used for calculatiobns; Group angles together
+            data = new CatzLog(Robot.currentTime.get(), targetAngularRate, targetAngle, 
+                               finalMotorPower, powerForMotor, currentAngle, deltaAngle, deltaTime,
+                               -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0,
+                               DataCollection.boolData);  
             Robot.dataCollection.logData.add(data);
           }
 
           Timer.delay(INTAKE_THREAD_PERIOD);
 
-        }//end of while true
+        }  //end of while true
               
       });
       intakeThread.start();
     
-    }//end of intakeControl();
+    }   //end of intakeControl();
 
 
     /*-----------------------------------------------------------------------------------------
     *  
-    * intakePivotDeploy()
+    * intakeDeploy()
     *
     *----------------------------------------------------------------------------------------*/
-    public void intakePivotDeploy()
+    public void intakeDeploy()
     {
-      System.out.println("method deploy");
       intakePivotMotor.set(ControlMode.PercentOutput,INTAKE_PIVOT_DEPLOY_POWER);
       intakePivotMode = INTAKE_PIVOT_MODE_DEPLOY;
-      
-     //intakePivotMotor.selectProfileSlot(INTAKE_UP_SLOT, 0);
-     //intakePivotMotor.set(ControlMode.Position,INTAKE_PIVOT_DEPLOY_ROTATION);
-      
     }
 
-    public void intakePivotStow()
+    public void intakeStow()
     {
+      pivotTimer.reset();
+      pivotTimer.start();
+
       intakePivotMode = INTAKE_PIVOT_MODE_STOW_CALC;
     }
 
@@ -451,30 +461,32 @@ public class CatzIntake {
             }
             else
             {
-                intakePivotDeploy();
-                Robot.intakeState = Robot.DEPLOYED;
+              intakeDeploy();
+              Robot.intakeState = Robot.DEPLOYED;
             }
         }
         else if (xboxValueStow == true)
         {
-            intakePivotStow();
-            Robot.intakeState = Robot.STOWED;
+          intakeStow();
+          Robot.intakeState = Robot.STOWED;
         }
     }
 
 
     /*-----------------------------------------------------------------------------------------
-    * getIntakeDeployPositionDegrees
+    *
+    *  getIntakePositionDegrees
+    *
     *----------------------------------------------------------------------------------------*/
-    public double getIntakeDeployPositionDegrees(){
+    public double getIntakePositionDegrees()
+    {
         deploymentMotorRawPosition = intakePivotMotor.getSelectedSensorPosition();
 
         double motorShaftRevolution = deploymentMotorRawPosition / INTAKE_PIVOT_REL_ENCODER_CPR;
-        double pivotShaftRevolution = motorShaftRevolution / INTAKE_PIVOT_FINAL_RATIO;
-        double pivotAngle =pivotShaftRevolution * -360.0;//motor  spin forward is positive 
+        double pivotShaftRevolution = motorShaftRevolution       / INTAKE_PIVOT_FINAL_RATIO;
+        double pivotAngle           = pivotShaftRevolution * -360.0; //motor  spin forward is positive 
         
-        return pivotAngle;
-       
+        return pivotAngle;   
     }
 
 
@@ -485,8 +497,7 @@ public class CatzIntake {
     *----------------------------------------------------------------------------------------*/
     public void smartDashboardIntake()
     {
-        SmartDashboard.putNumber("PivotAngle", getIntakeDeployPositionDegrees());
-        //SmartDashboard.putBooleanArray("yep",intakePivotMotor.)
+        SmartDashboard.putNumber("PivotAngle", getIntakePositionDegrees());
        
     }
 
@@ -498,6 +509,5 @@ public class CatzIntake {
       SmartDashboard.putNumber("getStatorCurrent", intakePivotMotor.getStatorCurrent());
       
     }
-
   
 }
