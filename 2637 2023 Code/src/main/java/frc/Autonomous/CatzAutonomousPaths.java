@@ -15,10 +15,11 @@ public class CatzAutonomousPaths
 {  
     private final SendableChooser<Boolean> chosenAllianceColor = new SendableChooser<>();
     private final SendableChooser<Integer> chosenPath = new SendableChooser<>();
+    private final SendableChooser<Boolean> chosenBalance = new SendableChooser<>();
 
     private final double STRAIGHT = 0.0;
-    public static double RIGHT = -90.0; 
-    public static double LEFT = 90.0;
+    public static double RIGHT = 90.0; 
+    public static double LEFT = -90.0;
 
     private final double TEMP_MAX_TIME = 8.0;
     private final double TEMP_DECEL_DIST = 0.05;
@@ -28,10 +29,12 @@ public class CatzAutonomousPaths
 
     public static boolean foward = false;
     public static boolean backward = false;
+
     public static boolean right = false;
     public static boolean left = false;
     public static boolean all = false; //set all direction sensors to false
     public static boolean pathing = false;
+    public static boolean doBalance = true; // default
     
     //MAX SPEED
     private final double FAST = 0.35;
@@ -99,18 +102,7 @@ public class CatzAutonomousPaths
         }*/
     }
 
-    //"prioritize" means we focus on making these work first
-    // MVP 2 -> 3 -> 5 -> 1 -> 7 -> 6 -> 4 least important 
-    // every path should have option to not balance 
 
-    private final int CENTERRIGHTTUNNEL            = 1;
-    private final int CENTERLEFTTUNNEL             = 2; //prioritize
-    private final int FARLEFTBACKWARDSJ            = 3; //prioritize
-    private final int MANUALSTICKMOVEMENT          = 4;
-    private final int FARLEFTBOOMERANGCENTERLEFT   = 5; //prioritize
-    private final int FARRIGHTBOOMERANGCENTERRIGHT = 6;
-    private final int FARLEFTEXITCOMMUNITY         = 7;
-    
     public void initializePathOptions()
     {
         chosenAllianceColor.setDefaultOption("Blue Alliance", Robot.constants.BLUE_ALLIANCE);
@@ -118,165 +110,270 @@ public class CatzAutonomousPaths
         SmartDashboard.putData(Robot.constants.ALLIANCE_COLOR, chosenAllianceColor);
 
         chosenPath.setDefaultOption(Robot.constants.POSITION_SELECTOR1, 1);
-        SmartDashboard.putData(Robot.constants.ALLIANCE_POSITION, chosenPath);
-
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR2, 2);
-        SmartDashboard.putData(Robot.constants.ALLIANCE_POSITION, chosenPath);
-
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR3, 3);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR4, 4);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR5, 5);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR6, 6);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR7, 7);
+        chosenPath.addOption(Robot.constants.POSITION_SELECTOR8, 8);
         SmartDashboard.putData(Robot.constants.ALLIANCE_POSITION, chosenPath);
+
+        chosenBalance.setDefaultOption("Do Balance", Robot.constants.YESBAL);
+        chosenBalance.addOption("Don't Balance", Robot.constants.NOOBAL);
+        SmartDashboard.putData(Robot.constants.BALANCE, chosenBalance);
     }
 
-    public void Red() 
-    {
+    public void Red() {
         RIGHT *= -1;
         LEFT *= -1;
     }
 
-    public void determinePath()
-    {
-        if(chosenAllianceColor.getSelected() == Robot.constants.BLUE_ALLIANCE)
-        {
-            if(chosenPath.getSelected() == CENTERRIGHTTUNNEL)
-            {
-                centerRightTunnel();
-            }
-            if(chosenPath.getSelected() == CENTERLEFTTUNNEL)
-            {
-                centerLeftTunnel();
-            }
-            if(chosenPath.getSelected() == FARLEFTBACKWARDSJ)
-            {
-                farLeftBackwardsJ();
-            }
-            if(chosenPath.getSelected() == MANUALSTICKMOVEMENT)
-            {
-                manualStickMovement();
-            }
-            if(chosenPath.getSelected() == FARLEFTBOOMERANGCENTERLEFT)
-            {
-                farLeftBoomerangCenterLeft();
-            }
-            if(chosenPath.getSelected() == FARRIGHTBOOMERANGCENTERRIGHT)
-            {
-                farRightBoomerangCenterRight();
-            }
-            if(chosenPath.getSelected() == FARLEFTEXITCOMMUNITY)
-            {
-                farLeftExitCommunity();
-            }
-        }
-        else
-        {
-            if(chosenPath.getSelected() == CENTERLEFTTUNNEL)
-            {
-                Red(); centerLeftTunnel();
-            }
-            if(chosenPath.getSelected() == CENTERRIGHTTUNNEL)
-            {
-                Red(); centerRightTunnel(); 
-            }
-            if(chosenPath.getSelected() == FARLEFTBACKWARDSJ)
-            {
-                Red(); farLeftBackwardsJ(); 
-            }
-            if(chosenPath.getSelected() == MANUALSTICKMOVEMENT)
-            {
-                Red(); manualStickMovement(); 
-            }
-            if(chosenPath.getSelected() == FARRIGHTBOOMERANGCENTERRIGHT)
-            {
-                Red(); farRightBoomerangCenterRight(); 
-            }
-            if(chosenPath.getSelected() == FARLEFTBOOMERANGCENTERLEFT)
-            {
-                Red(); farRightBoomerangCenterRight(); 
-            }
-            if(chosenPath.getSelected() == FARLEFTEXITCOMMUNITY)
-            {
-                Red(); farLeftExitCommunity(); 
-            }
-           
-        }
-    }
-
-    public void stop()
-    {
-        Robot.balance.StopBalancing();
-        Robot.auton.StopDriving();
-    }
-    
-    public void gridToCenter() 
-    {
-        Robot.auton.DriveStraight(MAX_DIST, TEMP_DECEL_DIST, FAST, STRAIGHT, TEMP_MAX_TIME);
-    }
+    // DriveStright(distance, decel distance, maxSpeed, steering wheel direction, max run time)
+    /**
+     * Drive Foward
+     */
     public void centerToGrid() 
     {
         Robot.auton.DriveStraight(-MAX_DIST, TEMP_DECEL_DIST, -FAST, STRAIGHT, TEMP_MAX_TIME);
     }
+    public void gridToCenter() 
+    {
+        Robot.auton.DriveStraight(MAX_DIST, TEMP_DECEL_DIST, FAST, STRAIGHT, TEMP_MAX_TIME);
+    }
+    
     public void gridToAreaInfrontOfCargo() 
     {
         Robot.auton.DriveStraight(MAX_DIST - MIN_DIST, TEMP_DECEL_DIST, FAST, STRAIGHT, TEMP_MAX_TIME);
     }
-    public void centerToAreaInfrontOfDock() 
+    
+    public void fowardToCargo() 
     {
-        Robot.auton.DriveStraight(-MAX_DIST + MIN_DIST, TEMP_DECEL_DIST, -FAST, STRAIGHT, TEMP_MAX_TIME);
-    }
-    public void translateRight48() 
-    {
-        Robot.auton.DriveStraight(GP_TO_GP, TEMP_DECEL_DIST, SLOW, RIGHT, TEMP_MAX_TIME);
-    }
-    public void translateLeft48() 
-    {
-        Robot.auton.DriveStraight(GP_TO_GP, TEMP_DECEL_DIST, SLOW, LEFT, TEMP_MAX_TIME);
+        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
     }
     public void gridToChargingStation() 
     {
         Robot.auton.DriveStraight(GP_TO_GP, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
     }
-    public void translateBackRight() 
+
+    /**
+     * Drive Backward
+     */
+
+    public void centerToAreaInfrontOfDock() 
     {
-        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, RIGHT, TEMP_MAX_TIME);
-        Robot.auton.DriveStraight(-MIN_DIST, TEMP_DECEL_DIST, -SLOW, STRAIGHT, TEMP_MAX_TIME);
-    }
-    public void translateBackLeft() 
-    {
-        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, LEFT, TEMP_MAX_TIME);
-        Robot.auton.DriveStraight(-MIN_DIST, TEMP_DECEL_DIST, -SLOW, STRAIGHT, TEMP_MAX_TIME);
-    }
-    public void translateFowardRight() 
-    {
-        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
-        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, RIGHT, TEMP_MAX_TIME);
-    }
-    public void translateFowardLeft() 
-    {
-        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
-        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, LEFT, TEMP_MAX_TIME);
-    }
-    public void fowardToCargo() 
-    {
-        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
+        Robot.auton.DriveStraight(-MAX_DIST + MIN_DIST, TEMP_DECEL_DIST, -FAST, STRAIGHT, TEMP_MAX_TIME);
     }
     public void dockToGrid() 
     {
         Robot.auton.DriveStraight(-MIN_DIST, TEMP_DECEL_DIST, -SLOW, STRAIGHT, TEMP_MAX_TIME);
-    }
-    public void diagonal()
-    {
-        Robot.auton.DriveStraight(GP_TO_GP, TEMP_DECEL_DIST, FAST, GP_TO_GP, TEMP_MAX_TIME); //wheelPos used to be 45 (foward left)
-        Robot.auton.DriveStraight(0, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
     }
     public void centerToChargingStation() 
     {
         Robot.auton.DriveStraight(-130, TEMP_DECEL_DIST, -FAST, STRAIGHT, TEMP_MAX_TIME); //dist used to be -128.75
     }
 
-    public void centerRightTunnel() //27 points; starts between april tags 7-8(blue), 3-2(red); balance = true; #1
+    /**
+     * Drive Right
+     */
+    public void translateRight48() 
+    {
+        Robot.auton.DriveStraight(GP_TO_GP, TEMP_DECEL_DIST, SLOW, RIGHT, TEMP_MAX_TIME);
+    }
+    public void translateFowardRight() 
+    {
+        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
+        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, RIGHT, TEMP_MAX_TIME);
+    }
+    public void translateBackRight() 
+    {
+        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, RIGHT, TEMP_MAX_TIME);
+        Robot.auton.DriveStraight(-MIN_DIST, TEMP_DECEL_DIST, -SLOW, STRAIGHT, TEMP_MAX_TIME);
+    }
+
+    /**
+     * Drive Left
+     */
+    public void translateLeft48() 
+    {
+        Robot.auton.DriveStraight(GP_TO_GP, TEMP_DECEL_DIST, SLOW, LEFT, TEMP_MAX_TIME);
+    }
+    public void translateFowardLeft() 
+    {
+        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
+        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, LEFT, TEMP_MAX_TIME);
+    }
+    public void translateBackLeft() 
+    {
+        Robot.auton.DriveStraight(MIN_DIST, TEMP_DECEL_DIST, SLOW, LEFT, TEMP_MAX_TIME);
+        Robot.auton.DriveStraight(-MIN_DIST, TEMP_DECEL_DIST, -SLOW, STRAIGHT, TEMP_MAX_TIME);
+    }    
+    public void diagonal()
+    {
+        Robot.auton.DriveStraight(GP_TO_GP, TEMP_DECEL_DIST, FAST, GP_TO_GP, TEMP_MAX_TIME); //wheelPos used to be 45 (foward left)
+        Robot.auton.DriveStraight(0, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
+    }
+
+            
+    private final int CENTER_PRELOAD_TAXI_BALANCE = 1;
+    private final int SIDE_PRELOAD_INTAKE_SCORE = 2;
+    private final int SIDE_2_PRELOAD_INTAKE_SCORE_BALANCE = 3;
+    private final int DEFENSE_PRELOAD_POSITIONING = 4;
+    private final int CENTER_RIGHT_TUNNEL = 5;
+    private final int MANUAL_STICK_MOVEMENT = 6;
+    private final int FAR_LEFT_BOOMERANG_CENTER_LEFT = 7;
+    private final int FAR_RIGHT_BOOMERANG_CENTER_RIGHT = 8;
+    
+    public void determinePath()
+    {
+        if(chosenAllianceColor.getSelected() == Robot.constants.BLUE_ALLIANCE)
+        {
+            if(chosenPath.getSelected() == CENTER_PRELOAD_TAXI_BALANCE) 
+            {
+                CenterPreloadTaxiBalance();
+            }
+            if(chosenPath.getSelected() == SIDE_PRELOAD_INTAKE_SCORE) 
+            {
+                SidePreloadIntakeScore();
+            }
+            if(chosenPath.getSelected() == SIDE_2_PRELOAD_INTAKE_SCORE_BALANCE)
+            {
+                Side2PreloadIntakeScoreBalance();
+            }
+            if(chosenPath.getSelected() == DEFENSE_PRELOAD_POSITIONING) 
+            {
+                DefensePreloadPositioning();
+            }
+            if(chosenPath.getSelected() == CENTER_RIGHT_TUNNEL) 
+            {
+                centerRightTunnel();
+            }
+            if(chosenPath.getSelected() == MANUAL_STICK_MOVEMENT) 
+            {
+                manualStickMovement();
+            }
+            if(chosenPath.getSelected() == FAR_LEFT_BOOMERANG_CENTER_LEFT) 
+            {
+                farLeftBoomerangCenterLeft();
+            }
+            if(chosenPath.getSelected() == FAR_RIGHT_BOOMERANG_CENTER_RIGHT) 
+            {
+                farRightBoomerangCenterRight();
+            }
+        }
+        else //added "red()" infront of these all to invert all rights and lefts for the red side of the field
+        {
+            if(chosenPath.getSelected() == CENTER_PRELOAD_TAXI_BALANCE) 
+            {
+                Red(); CenterPreloadTaxiBalance();
+            }
+            if(chosenPath.getSelected() == SIDE_PRELOAD_INTAKE_SCORE) 
+            {
+                Red(); SidePreloadIntakeScore();
+            }
+            if(chosenPath.getSelected() == SIDE_2_PRELOAD_INTAKE_SCORE_BALANCE) 
+            {
+                Red(); Side2PreloadIntakeScoreBalance();
+            }
+            if(chosenPath.getSelected() == DEFENSE_PRELOAD_POSITIONING) 
+            {
+                Red(); DefensePreloadPositioning();
+            }
+            if(chosenPath.getSelected() == CENTER_RIGHT_TUNNEL) 
+            {
+                Red(); centerRightTunnel();
+            }
+            if(chosenPath.getSelected() == MANUAL_STICK_MOVEMENT)
+            {
+                Red(); manualStickMovement();
+            }
+            if(chosenPath.getSelected() == FAR_LEFT_BOOMERANG_CENTER_LEFT) 
+            {
+                Red(); farLeftBoomerangCenterLeft();
+            }
+            if(chosenPath.getSelected() == FAR_RIGHT_BOOMERANG_CENTER_RIGHT) 
+            {
+                Red(); farRightBoomerangCenterRight();
+            }
+           
+        }
+    }
+
+    /********************************** */
+    public void CenterPreloadTaxiBalance() 
+    {
+        pathing = true;
+        path = "Center Left Tunnel";
+        dockToGrid();
+        //score code
+        gridToCenter();
+        //pickup cone;
+        if(doBalance = true) 
+        {
+            centerToChargingStation();
+            Robot.balance.StartBalancing();
+        }
+
+        Robot.auton.StopDriving();
+        pathing = false;
+    }
+    
+    /********************************** */
+    public void SidePreloadIntakeScore()
+    {
+        pathing = true;
+        path = "Center Left Tunnel";
+        dockToGrid();
+        //score code
+        gridToCenter();
+        //pickup cone;
+        centerToGrid();
+
+        Robot.auton.StopDriving();
+        pathing = false;
+    }
+
+    /***************************************** */
+    public void Side2PreloadIntakeScoreBalance() 
+    {
+        pathing = true;
+        path = "..";
+        translateBackLeft();
+        //score cone
+        translateFowardRight();
+        gridToCenter();
+        //pickup cube
+        centerToGrid();
+        //score cube
+        translateFowardRight();
+        translateRight48();
+        if(doBalance = true) 
+        {
+            gridToChargingStation();
+            Robot.balance.StartBalancing();
+        }
+
+        Robot.auton.StopDriving();
+        pathing = false;
+    }
+
+    /********************************** */
+    public void DefensePreloadPositioning() 
+    {
+        pathing = true;
+        path = "Far Left Exit Community";
+        translateBackLeft();
+        //score cone;
+        translateFowardRight();
+        gridToAreaInfrontOfCargo();
+        diagonal();
+
+        Robot.auton.StopDriving();
+        pathing = false;
+    }
+
+
+    public void centerRightTunnel() 
     {  
         pathing = true;
         path = "Center Right Tunnel";
@@ -289,48 +386,17 @@ public class CatzAutonomousPaths
         translateBackRight();
         //score cone;
         translateFowardLeft();
-        gridToChargingStation();
-
+        if(doBalance = true) 
+        {
+            gridToChargingStation();
+            Robot.balance.StartBalancing();
+        }
         Robot.auton.StopDriving();
         pathing = false;
-        Robot.balance.StartBalancing();
+        
     }
 
-    public void centerLeftTunnel() //21 points; starts between april tags 6-7(blue), 2-1(red); balance = true; #2
-    {
-        pathing = true;
-        path = "Center Left Tunnel";
-        dockToGrid();
-        //score code
-        gridToCenter();
-        //pickup cone;
-        centerToChargingStation();
-
-        Robot.auton.StopDriving();
-        pathing = false;
-        Robot.balance.StartBalancing();
-    }
-
-    public void farLeftBackwardsJ() //27 points; starts infront april tag 6(blue), 3(red); balance = true; #3
-    {  
-        pathing = true;
-        path = "Far Left Backwards J Shape";
-        translateBackLeft();
-        //score cone;
-        translateFowardRight();
-        gridToAreaInfrontOfCargo();
-        //pickup cube;
-        centerToGrid();
-        //score cube;
-        translateFowardRight();
-        gridToChargingStation();
-
-        Robot.auton.StopDriving();
-        pathing = false;
-        Robot.balance.StartBalancing();
-    }
-
-    public void manualStickMovement() //33 points; starts between april tags 7-8(blue), 3-2(red); balance = true; #4
+    public void manualStickMovement() 
     {
         pathing = true;
         path = "Manual Car Stick";
@@ -346,14 +412,18 @@ public class CatzAutonomousPaths
         //pickup cone
         centerToGrid();
         //score cone
-        gridToChargingStation();
+        if(doBalance = true) 
+        {
+            gridToChargingStation();
+            Robot.balance.StartBalancing();
+        }
 
         Robot.auton.StopDriving();
         pathing = false;
-        Robot.balance.StartBalancing();
     }
 
-    public void farLeftBoomerangCenterLeft() //33 points; starts infront of april tag 6(blue), 3(red); balance = true; #5
+
+    public void farLeftBoomerangCenterLeft()
     {
         pathing = true;
         path = "Far Left Boomerang Center Left";
@@ -370,14 +440,18 @@ public class CatzAutonomousPaths
         //pickup cone
         centerToGrid();
         //score cone
-        gridToChargingStation(); //have if/else statement to 
+        if(doBalance = true) 
+        {
+            gridToChargingStation();
+            Robot.balance.StartBalancing();
+        }
 
         Robot.auton.StopDriving();
         pathing = false;
-        Robot.balance.StartBalancing();
     }
 
-    public void farRightBoomerangCenterRight() //33 points; starts infront of april tag 8(blue), 1(red); balance = true; #6
+
+    public void farRightBoomerangCenterRight()
     {
         pathing = true;
         path = "Far Right Boomerang Center Right";
@@ -394,26 +468,17 @@ public class CatzAutonomousPaths
         //pickup cone
         centerToGrid();
         //score cone
-        gridToChargingStation();
+        if(doBalance = true) 
+        {
+            gridToChargingStation();
+            Robot.balance.StartBalancing();
+        }
 
         Robot.auton.StopDriving();
         pathing = false;
-        Robot.balance.StartBalancing();
     }
     
-    public void farLeftExitCommunity() //9 points; starts infront of april tag 6(blue), 3(red); balance = false; #7
-    {
-        pathing = true;
-        path = "Far Left Exit Community";
-        translateBackLeft();
-        //score cone;
-        translateFowardRight();
-        gridToAreaInfrontOfCargo();
-        diagonal();
 
-        Robot.auton.StopDriving();
-        pathing = false;
-    }
 
     public static void updateShuffleboard()
     {

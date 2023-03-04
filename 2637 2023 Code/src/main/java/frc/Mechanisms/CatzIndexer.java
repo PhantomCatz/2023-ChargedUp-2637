@@ -1,37 +1,36 @@
 package frc.Mechanisms;
 
-
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.RelativeEncoder;
 
+import com.revrobotics.SparkMaxPIDController;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import frc.DataLogger.CatzLog;
 import frc.DataLogger.DataCollection;
 import frc.robot.Robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.util.Color;
-import frc.DataLogger.DataCollection;
 
 import com.revrobotics.ColorSensorV3;
 
 
-public class CatzIndexer {
+public class CatzIndexer 
+{
     //          SPARKMAX DEFS
     public CANSparkMax inDexerMtrCtrlFRNT;
 
-    private final int INDEXER_FRNT_MC_CAN_ID        = 30;
+    private final int INDEXER_FRNT_MC_CAN_ID        = 1;
     private final int INDEXER_FRNT_MC_CURRENT_LIMIT = 60;
 
     public final double INDEXER_FRNT_SPEED = 0.4;
-
+    public final double INDEXER_FRNT_SPEED_FAST = 1;
 
     //
     public final double INDEXER_SPEED_OFF = 0.0;
@@ -39,7 +38,7 @@ public class CatzIndexer {
     //          SECOND MOTOR DEFS
     public CANSparkMax inDexerMtrCtrlBACK;
 
-    private final int INDEXER_BACK_MC_CAN_ID        = 31;
+    private final int INDEXER_BACK_MC_CAN_ID        = 2;
     private final int INDEXER_BACK_MC_CURRENT_LIMIT = 60;
 
     public final double INDEXER_BACK_SPEED = 0.2;
@@ -47,7 +46,7 @@ public class CatzIndexer {
     //          Flipper Defs
     public CANSparkMax inDexerMtrCtrlFLIPPER;
 
-    private final int INDEXER_FLIPPER_MC_CAN_ID        = 32;
+    private final int INDEXER_FLIPPER_MC_CAN_ID        = 3;
     private final int INDEXER_FLIPPER_MC_CURRENT_LIMIT = 60;
 
     public final double INDEXER_FLIPPER_SPEED = 0.2;
@@ -82,6 +81,7 @@ public class CatzIndexer {
     Color detectedColor;
     double IR;
     int proximity;
+    
 
     //          objectdetection and flags
     public boolean objectReady = false;
@@ -93,12 +93,13 @@ public class CatzIndexer {
     private boolean coneTestActive;
 
     private boolean flipperActive;
+    private boolean flipperDeactivating;
 
     private boolean colorTestActive;
 
-    public boolean isConeDetected = false;
+    public static boolean isConeDetected = false;
 
-    public boolean isCubeDetected = false;
+    public static boolean isCubeDetected = false;
     
 
     //
@@ -119,8 +120,18 @@ public class CatzIndexer {
     private double MAX_BELT_TIME = 4;
     private double CONE_TEST_DELAY_THRESHOLD = 4.8;
     private double FLIPPER_DELAY_THRESHOLD = 7;
+   
 
     public CatzLog data;
+
+    private RelativeEncoder m_encoder;
+    private SparkMaxPIDController elevSpoolPid;
+    private final double PID_ELEVATOR_SPOOL_KP = 0.00;
+    private final double PID_ELEVATOR_SPOOL_KI = 0.00;
+    private final double PID_ELEVATOR_SPOOL_KD = 0.00;
+
+
+
     //                      End of definitions
 
     public CatzIndexer() 
@@ -131,7 +142,7 @@ public class CatzIndexer {
         inDexerMtrCtrlFRNT.setIdleMode(IdleMode.kBrake);
         inDexerMtrCtrlFRNT.setSmartCurrentLimit(INDEXER_FRNT_MC_CURRENT_LIMIT);
 
-        
+      
         inDexerMtrCtrlBACK = new CANSparkMax(INDEXER_BACK_MC_CAN_ID, MotorType.kBrushless); 
 
         inDexerMtrCtrlBACK.restoreFactoryDefaults();
@@ -144,9 +155,7 @@ public class CatzIndexer {
         inDexerMtrCtrlFLIPPER.restoreFactoryDefaults();
         inDexerMtrCtrlFLIPPER.setIdleMode(IdleMode.kBrake);
         inDexerMtrCtrlFLIPPER.setSmartCurrentLimit(INDEXER_FLIPPER_MC_CURRENT_LIMIT);
-
-
-
+    
         indexerTimer = new Timer();
 
         flipperTimer = new Timer();
@@ -155,109 +164,49 @@ public class CatzIndexer {
         beamBreakLFT = new DigitalInput(BEAM_BREAK_DIO_PORT_LFT);
         beamBreakRGT = new DigitalInput(BEAM_BREAK_DIO_PORT_RGT);
 
-        startIndexerThread();
+        m_encoder = inDexerMtrCtrlFLIPPER.getEncoder();
+        m_encoder.setPositionConversionFactor(60);
+        m_encoder.setPosition(0);
+        
+        elevSpoolPid = inDexerMtrCtrlFLIPPER.getPIDController();
 
-      
+        elevSpoolPid.setP(PID_ELEVATOR_SPOOL_KP);
+        elevSpoolPid.setI(PID_ELEVATOR_SPOOL_KI);
+        elevSpoolPid.setD(PID_ELEVATOR_SPOOL_KD);
+
+        startIndexerThread();
     }
 
-    void startIndexerThread() 
+    public void startIndexerThread() 
     {
         Indexer = new Thread(() ->
         {
+            resetFlags();
             while(true)
             {
-                collectColorSensorDistanceValues();
-
-
-                if (objectDetectedMethod())//if ir detects object
+                m_encoder.setPosition(0);
+                
+                while(flipperActive == true)
                 {
-                    resetFlags();
-                    while(colorTestActive = true)
-                    {
-                        collectColorValues(); 
-                        
-                        if(CubeDetectedMethod())//test color values for cube
-                        {
-                            colorSelected = "cube";
-                            indexerTimer.reset();
-                            indexerTimer.start();
-                            indexerTime = indexerTimer.get();//reset timer
-
-                            runIndexerBelt();
-                            while(objectNotInPosition == true)
-                            {
-                                collectBeamBreakValues();
-
-                                if(((beamBreakLFTContinuity == false) || (beamBreakRGTContinuity == false)) || indexerTime > MAX_BELT_TIME)//if a beambreak is broken or if the time limit is reached
-                                {
-                                    stopbelt();
-                                    objectReady = true;
-                                    finalStateINT = 3;
-                                    exitFlags(); //turns the while statments to false to breakout of the while loops
-                                }
-                            }
-                        }
-                    
-                        if(ConeDetectedMethod())//test color values for cone
-                        {
-                            colorSelected = "CONE";
-                            indexerTimer.reset();
-                            indexerTimer.start();
-                            indexerTime = indexerTimer.get();//reset timer
-                    
-                            runIndexerBelt();
-                            while(objectNotInPosition == true)
-                            {
-                                if(indexerTime >= MAX_BELT_TIME) //once the cone reaches the end, stop belt
-                                {
-                                    stopbelt();
-                                   
-                                    while (coneTestActive = true)
-                                    {
-                                        if(indexerTime >= CONE_TEST_DELAY_THRESHOLD)//once the delay is over, start testing for orientation
-                                        {
-                                            
-                                            collectBeamBreakValues();
-
-                                            if((beamBreakLFTContinuity == true) || (beamBreakRGTContinuity == true))//if not in correct position
-                                            {
-                                                runFlipper();
-                                                
-                                                resetFlipper();
-
-                                                collectBeamBreakValues();
-                                                if ((beamBreakRGTContinuity == false) && (beamBreakLFTContinuity == false))//if the cone is in the correct position
-                                                {
-                                                    objectReady = true;
-                                                    finalStateINT = 1;
-                                                    exitFlags(); //turns the while statments to false to breakout of the while loops
-                                                }
-                                                
-                                            }      
-                                            else if((beamBreakRGTContinuity == false) && (beamBreakLFTContinuity == false))//if already in correct position
-                                            {
-                                                objectReady = true;
-                                                finalStateINT = 2;
-                                                exitFlags(); //turns the while statments to false to breakout of the while loops
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    runFlipper();
+                
+                    flipperActive = false;
+                    //break;
                 }
-                    
-                DataCollectionINDEXER();
+                
+                DataCollectionINDEXER();//doesn't collect data continously
             }
+        
         });
         Indexer.start();
     }
+    
 
 
 
 
-   public void collectColorValues() {
+    public void collectColorValues() 
+    {
 
         RedValue    = detectedColor.red;
         GreenValue  = detectedColor.green;
@@ -282,9 +231,13 @@ public class CatzIndexer {
     }
 
     void runIndexerBelt() {
-        inDexerMtrCtrlFRNT.set(INDEXER_FRNT_SPEED);
+        inDexerMtrCtrlFRNT.set(-INDEXER_FRNT_SPEED);
         inDexerMtrCtrlBACK.set(INDEXER_BACK_SPEED);
+    }
 
+    void runIndexerBeltFast(){
+        inDexerMtrCtrlFRNT.set(INDEXER_FRNT_SPEED_FAST);
+        inDexerMtrCtrlBACK.set(INDEXER_BACK_SPEED);
     }
 
     void stopbelt() {
@@ -292,41 +245,26 @@ public class CatzIndexer {
     }
 
     void runFlipper(){
-        flipperTimer.reset();
-        flipperTimer.start();
-        flipperTime = flipperTimer.get();
 
-        inDexerMtrCtrlFLIPPER.set(INDEXER_FLIPPER_SPEED);
-
-        while (flipperActive = true)
+        while (m_encoder.getPosition() > -100)
         {
-            if(flipperTime > FLIPPER_DELAY_THRESHOLD)
-            {
-                inDexerMtrCtrlFLIPPER.stopMotor();
-                flipperActive = false;
-            }
+            inDexerMtrCtrlFLIPPER.set(-0.02);
+            
         }
+        resetFlipper();
 
     }
 
     void resetFlipper(){
-        flipperTimer.reset();
-        flipperTimer.start();
-        flipperTime = flipperTimer.get();
 
-        inDexerMtrCtrlFLIPPER.set(-INDEXER_FLIPPER_SPEED);
-
-        while (flipperActive = true)
+        while (m_encoder.getPosition() < -20)
         {
-            if(flipperTime > FLIPPER_DELAY_THRESHOLD)
-            {
-                inDexerMtrCtrlFLIPPER.stopMotor();
-                flipperActive = false;
-            }
+            inDexerMtrCtrlFLIPPER.set(0.2);
         }
+        inDexerMtrCtrlFLIPPER.stopMotor();
     }
 
-    void resetFlags(){
+    public void resetFlags(){
         coneTestActive = true;
         objectNotInPosition = true;
         flipperActive = true;
@@ -342,6 +280,7 @@ public class CatzIndexer {
 
     public void SmartDashboardIndexer()
     {
+        /* 
         SmartDashboard.putNumber("Proximity", proximity);
         SmartDashboard.putNumber("Red", detectedColor.red);
         SmartDashboard.putNumber("Green", detectedColor.green);
@@ -349,8 +288,11 @@ public class CatzIndexer {
         SmartDashboard.putNumber("IR", IR);
         SmartDashboard.putBoolean("Beam1", beamBreakLFTContinuity);
         SmartDashboard.putBoolean("Beam2", beamBreakRGTContinuity);
+         */
         SmartDashboard.putString("object detected", colorSelected);
         SmartDashboard.putNumber("TraceID", finalStateINT);
+        SmartDashboard.putNumber("Encoder Position", m_encoder.getPosition());
+        SmartDashboard.putNumber("Encoder getpositionfactor", m_encoder.getPositionConversionFactor());
 
     }
 
@@ -358,7 +300,7 @@ public class CatzIndexer {
     {
         if (DataCollection.LOG_ID_INDEXER == DataCollection.chosenDataID.getSelected())
         {
-            data = new CatzLog(Robot.currentTime.get(),0,0,0,0,0,0,0,0,0,0,0,0,0,0,1);  
+            data = new CatzLog(Robot.currentTime.get(),detectedColor.red,detectedColor.blue,detectedColor.green,proximity,finalStateINT,0,0,0,0,0,0,0,0,0,1);  
             Robot.dataCollection.logData.add(data);
         }
     }
@@ -400,4 +342,5 @@ public class CatzIndexer {
         }
         return isCubeDetected;
     }
+    
 }

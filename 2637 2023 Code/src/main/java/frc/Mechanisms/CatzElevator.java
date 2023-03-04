@@ -31,14 +31,15 @@ public class CatzElevator {
 
     private int elevatorState;
     private final static int ELEV_STATE_IDLE                 = 0;
-    private final static int ELEV_STATE_ELEVATOR_MOVE_TO_TOP = 1;
-    private final static int ELEV_STATE_ELEVATOR_MOVE_TO_MID = 2;
-    private final static int ELEV_STATE_ELEVATOR_STOW        = 3;
+    private final static int ELEV_STATE_ELEVATOR_SCORE_TOP = 1;
+    private final static int ELEV_STATE_ELEVATOR_SCORE_MID = 2;
+    private final static int ELEV_STATE_ELEVATOR_SCORE_LOW        = 3;
 
     private static boolean elevatorSpoolDone = false;
     private static boolean elevatorPivotDone = false;
 
-    private static boolean elevatorPivotMalualMode = false;
+    private static boolean elevatorSpoolManualMode = false;
+    private static boolean elevatorPivotManualMode = false;
 
     public static CANSparkMax elevatorSpoolMC;
 
@@ -91,20 +92,20 @@ public class CatzElevator {
     private final double ELEV_PIVOT_FINAL_RATIO   = ELEV_PIVOT_VERSA_FINAL_RATIO * ELEV_PIVOT_GEAR_RATIO;
     private final double ELEV_PIV_CNTS_TO_DEGREES = 360.0 / 2048.0;//add gear ratio
 
-    private final double ELEV_SPOOL_TOP_MAX_RANGE = 36.0;// TBD
-    private final double ELEV_SPOOL_BOT_MAX_RANGE = 0.0;
+    private double ELEV_SPOOL_TOP_MAX_RANGE = 75.0;// TBD
+    private double ELEV_SPOOL_BOT_MAX_RANGE = 0.0;
 
     private static RelativeEncoder elevSpoolEncoder;
 
     private final double ELEV_SPOOL_ENCODER_STARTING_POS = 0.0;
 
-    private double elevSpoolScoreTopPos = 10.0; //TBD - probably use ELEV_TOP_MAX_RANGE as score pos
-    private double elevSpoolScoreMidPos = 5.0;
-    private double elevSpoolScoreBotPos = 0.0;
+    private double elevSpoolScoreTopPos = 74.0; //TBD - probably use ELEV_TOP_MAX_RANGE as score pos
+    private double elevSpoolScoreMidPos = 50.0;
+    private double elevSpoolScoreBotPos = 26.0;
 
-    private final double ELEV_PIVOT_SCORE_HIGH_POS = 2023.0; //to be fixed
-    private final double ELEV_PIVOT_SCORE_MID_POS  = 2500.0; //to be fixed
-    private final double ELEV_PIVOT_SCORE_LOW_POS  = 2500.0; //to be fixed
+    private final double ELEV_PIVOT_SCORE_HIGH_POS = 2083.0; //to be fixed
+    private final double ELEV_PIVOT_SCORE_MID_POS  = 2160.0; //to be fixed
+    private final double ELEV_PIVOT_SCORE_LOW_POS  = 2150.0; //to be fixed
 
     private double currentSpoolPos;
     private double elevCarriagePosInch;
@@ -160,6 +161,8 @@ public class CatzElevator {
 
         elevLimitSwitchStowedPos  = elevatorSpoolMC.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen);
         elevLimitSwitchScoringTop = elevatorSpoolMC.getForwardLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen);
+        
+
         elevLimitSwitchScoringMid = new DigitalInput(ELEV_SCORING_MID_DIO_PORT);
 
         elevSpoolEncoder = elevatorSpoolMC.getEncoder();
@@ -180,8 +183,8 @@ public class CatzElevator {
         elevPivotMtrLT = new WPI_TalonFX(ELEVATOR_PIVOT_LT_MC_ID);
         elevPivotMtrRT = new WPI_TalonFX(ELEVATOR_PIVOT_RT_MC_ID);
         
-        elevPivotMtrLT.configFactoryDefault();
-        elevPivotMtrRT.configFactoryDefault();
+       // elevPivotMtrLT.configFactoryDefault();
+        //elevPivotMtrRT.configFactoryDefault();
 
         elevPivotMtrRT.follow(elevPivotMtrLT);
         elevPivotMtrRT.setInverted(true);
@@ -193,11 +196,12 @@ public class CatzElevator {
 
         pivotEnc = new CANCoder(ELEV_PIV_ENCODER_SEN_ID); // CANCoder
         wheelOffset = 0.0;// TBD
+
         //make these constants, they are for testing rn only
-        elevPivotMtrLT.configReverseSoftLimitThreshold(1990.0);
+       elevPivotMtrLT.configReverseSoftLimitThreshold(2065.0);
        elevPivotMtrLT.configReverseSoftLimitEnable(true);
 
-       elevPivotMtrLT.configForwardSoftLimitThreshold(2600.0);
+       elevPivotMtrLT.configForwardSoftLimitThreshold(2568.0);
        elevPivotMtrLT.configForwardSoftLimitEnable(true);
 
         elevPivotMtrLT.config_kP(0, PID_ELEVATOR_UP_EMPTY_KP);
@@ -251,45 +255,59 @@ public class CatzElevator {
                         
                     break;
 
-                    case ELEV_STATE_ELEVATOR_MOVE_TO_TOP:
-                        if(!elevatorSpoolDone && !elevatorPivotDone)
-                        {
-                            if(!elevLimitSwitchScoringTop.isPressed())
-                            {
-                                elevatorSpoolMC.set(ELEVATOR_SPOOL_EXTEND_MTR_POWER);
-                            } 
-                            else
-                            {
-                                elevatorSpoolMC.set(ELEVATOR_SPOOL_MTR_STOP);
-                                elevatorSpoolDone = true;
-                            }
+                    case ELEV_STATE_ELEVATOR_SCORE_TOP:
+                        elevatorSpoolDone = false;
+                        elevatorPivotDone = false;
 
-                            
-                        }
-                    break;
-
-                    case ELEV_STATE_ELEVATOR_MOVE_TO_MID:
-                        if(!elevatorSpoolDone && !elevatorPivotDone)
+                        if(!elevatorSpoolDone)
                         {
-                            elevSpoolPid.setReference(elevSpoolScoreMidPos, CANSparkMax.ControlType.kPosition);
-                            if(elevLimitSwitchScoringMid.get())
+                            elevSpoolPid.setReference(elevSpoolScoreTopPos, CANSparkMax.ControlType.kPosition);
+                            if(elevLimitSwitchScoringTop.isPressed())
                             {
-                                elevSpoolScoreMidPos = elevSpoolEncoder.getPosition();
+                                // elevSpoolScoreMidPos = elevSpoolEncoder.getPosition();
                                 elevatorSpoolDone = true;
                             }
                         }
+                        if(!elevatorPivotDone)
+                        {
+                            elevatorPivotHighScoringPosition();
+                            elevatorPivotDone = true;
+                        }
+
+                        elevatorState = ELEV_STATE_IDLE;
                     break;
 
-                    case ELEV_STATE_ELEVATOR_STOW:
-                        if(!elevatorSpoolDone && !elevatorPivotDone)
+                    case ELEV_STATE_ELEVATOR_SCORE_MID:
+                        elevSpoolPid.setReference(elevSpoolScoreMidPos, CANSparkMax.ControlType.kPosition);
+                        elevatorPivotMidScoringPosition();
+
+                        elevatorState = ELEV_STATE_IDLE;
+                    break;
+
+                    case ELEV_STATE_ELEVATOR_SCORE_LOW:
+                        elevatorSpoolDone = false;
+                        elevatorPivotDone = false;
+                        if(!elevatorSpoolDone)
                         {
                             elevSpoolPid.setReference(elevSpoolScoreBotPos, CANSparkMax.ControlType.kPosition);
-                            if(elevLimitSwitchStowedPos.isPressed())
+                            
+                            if(elevLimitSwitchStowedPos.isPressed() || getSpoolMtrPositionInch() <= ELEV_SPOOL_BOT_MAX_RANGE )
                             {
-                                elevSpoolScoreMidPos = elevSpoolEncoder.getPosition();
+                                if(elevLimitSwitchStowedPos.isPressed())
+                                {
+                                    elevSpoolEncoder.setPosition(0.0);
+
+                                }
                                 elevatorSpoolDone = true;
                             }
                         }
+                        if(!elevatorPivotDone)
+                        {
+                            elevatorPivotLowScoringPosition();
+                            elevatorPivotDone = true;
+                        }
+                         
+                        elevatorState = ELEV_STATE_IDLE;
                     break;
 
                     default:
@@ -307,6 +325,21 @@ public class CatzElevator {
         elevatorSpoolMC.setIdleMode(IdleMode.kBrake);
         elevPivotMtrLT.setNeutralMode(NeutralMode.Brake);
         elevPivotMtrRT.setNeutralMode(NeutralMode.Brake);
+    }
+
+    public void elevatorScoreTop()
+    {
+        elevatorState = ELEV_STATE_ELEVATOR_SCORE_TOP;
+    }
+
+    public void elevatorScoreMid()
+    {
+        elevatorState = ELEV_STATE_ELEVATOR_SCORE_MID;
+    }
+
+    public void elevatorScoreLow()
+    {
+        elevatorState = ELEV_STATE_ELEVATOR_SCORE_LOW;
     }
 
 
@@ -355,32 +388,64 @@ public class CatzElevator {
 
     public void manualExtension(double xboxInput)
     {
+        xboxInput*=-1.0;
         double mtrPwr;
         elevatorState = ELEV_STATE_IDLE;
 
-        mtrPwr = xboxInput;
-
-        if(xboxInput >= 0.2)//add a constant
+        if(Math.abs(xboxInput) > 0.2)
         {
-            if(getSpoolMtrPositionInch() >= ELEV_SPOOL_TOP_MAX_RANGE || elevLimitSwitchScoringTop.isPressed())
-            {
-                mtrPwr = 0.0;
-            } 
+            elevatorSpoolManualMode = true;
         } 
-        else if(xboxInput <= -0.2)
+        else if(elevatorSpoolManualMode)
         {
-            if(elevLimitSwitchStowedPos.isPressed())
-            {
-                mtrPwr = 0.0;
-                elevSpoolEncoder.setPosition(0.0);
-            }
-        } 
-        else
-        {
-            mtrPwr = 0.0;
+            elevatorSpoolMC.set(0.0);
+            elevatorSpoolManualMode = false;
         }
 
-        elevatorSpoolMC.set(mtrPwr);
+        mtrPwr = xboxInput;
+        System.out.println("xboxinput" + xboxInput);
+
+        if(elevatorSpoolManualMode)
+        {
+            if(xboxInput >= 0.2)//add a constant
+            {
+                if(getSpoolMtrPositionInch() >= ELEV_SPOOL_TOP_MAX_RANGE || elevLimitSwitchScoringTop.isPressed())
+                {
+                    mtrPwr = 0.0;
+                } 
+            } 
+            else if(xboxInput <= -0.2)
+            {
+                mtrPwr *= 0.3;
+                if(elevLimitSwitchStowedPos.isPressed() || getSpoolMtrPositionInch() <= ELEV_SPOOL_BOT_MAX_RANGE )
+                {
+                    mtrPwr = 0.0;
+                    System.out.println("Bot Limit Elev Spool" + getSpoolMtrPositionInch());
+
+                    if(elevLimitSwitchStowedPos.isPressed())
+                    {
+                        elevSpoolEncoder.setPosition(0.0);
+
+                    }
+                }
+            }
+
+            elevatorSpoolMC.set(mtrPwr);
+        }
+    }
+
+    public void ignoreSpoolSoftLimit(boolean ignoresSoftLimits)
+    {
+        if (ignoresSoftLimits)
+        {
+            ELEV_SPOOL_TOP_MAX_RANGE = 9999.0;
+            ELEV_SPOOL_BOT_MAX_RANGE = -9999.0;
+        }
+        else
+        {
+            ELEV_SPOOL_TOP_MAX_RANGE = 78.0;// TBD, this is an approx value
+            ELEV_SPOOL_BOT_MAX_RANGE = 0.0;
+        }
     }
 
 
@@ -396,8 +461,8 @@ public class CatzElevator {
      * Elevator pivot code
      *
      ************************************************************************************************************************************************/
-    public void lowScoringPosition() {
-        elevatorPivotMalualMode = false;
+    public void elevatorPivotLowScoringPosition() {
+        elevatorPivotManualMode = false;
         pivotCurrentAngleLT = pivotEnc.getPosition();
 
         if (indexingCone) {
@@ -414,8 +479,8 @@ public class CatzElevator {
         currentPivotCmd = ELEV_PIV_SCORE_LOW_CMD;
     }
 
-    public void midScoringPosition() {
-        elevatorPivotMalualMode = false;
+    public void elevatorPivotMidScoringPosition() {
+        elevatorPivotManualMode = false;
         pivotCurrentAngleLT = pivotEnc.getPosition();
 
         if (indexingCone && currentPivotCmd == ELEV_PIV_SCORE_HIGH_CMD) {
@@ -440,8 +505,8 @@ public class CatzElevator {
         currentPivotCmd = ELEV_PIV_SCORE_MID_CMD;
     }
 
-    public void highScoringPosition() {
-        elevatorPivotMalualMode = false;
+    public void elevatorPivotHighScoringPosition() {
+        elevatorPivotManualMode = false;
         pivotCurrentAngleLT = pivotEnc.getPosition();
 
         if (indexingCone) {
@@ -462,11 +527,17 @@ public class CatzElevator {
     }
 
     public void manualPivotControl(double power) {
-        if(Math.abs(power) >= 0.0)
+        if(Math.abs(power) > 0.0)
         {
-            elevatorPivotMalualMode = true;
+            elevatorPivotManualMode = true;
+        } 
+        else if(elevatorPivotManualMode)
+        {
+            elevatorPivotManualMode = false;
+            elevPivotMtrLT.set(0.0);
         }
-        if(elevatorPivotMalualMode == true)
+
+        if(elevatorPivotManualMode == true)
         {
             elevPivotMtrLT.set(power);
         }

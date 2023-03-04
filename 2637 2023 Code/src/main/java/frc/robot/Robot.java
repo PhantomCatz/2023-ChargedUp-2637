@@ -165,7 +165,6 @@ public class Robot extends TimedRobot {
     catzRGB        = new CatzRGB();
     claw           = new CatzClaw();
 
-
     currentTime = new Timer();
   }
 
@@ -180,12 +179,15 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic()
   {
+    dataCollection.updateLogDataID();
     drivetrain.updateShuffleboard();
 
     //For each mechanism - debug and comp
     SmartDashboard.putNumber("NavX", navX.getAngle());
 
     //drivetrain.testAngle();
+    elevator.smartDashboardElevator();
+    elevator.getEncPuts();
     
     catzRGB.LEDWork();
   }
@@ -222,7 +224,7 @@ public class Robot extends TimedRobot {
 
     paths.determinePath();
 
-    paths.stop();                   //TBD - move into autonomous file
+                    //TBD - move into autonomous file
     
   }
 
@@ -302,11 +304,6 @@ public class Robot extends TimedRobot {
 
     //TBD HOW DO WE GO TO STOW POSITION???
     
-    if(Math.abs(xboxAux.getRightY()) >= 0.1)
-    {
-      elevator.manualExtension(xboxAux.getRightY());
-    }
-
     if(xboxAux.getAButton())
     {
       if(intakeState == DEPLOYED)
@@ -314,8 +311,9 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
-      elevator.spoolStowedPos();
-      elevator.lowScoringPosition();
+      // elevator.spoolStowedPos();
+      // elevator.elevatorPivotLowScoringPosition();
+      elevator.elevatorScoreLow();
 
       //go to LOW scoring position
     }
@@ -326,8 +324,10 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
-      elevator.spoolMidScorePos();
-      elevator.midScoringPosition();
+      // elevator.spoolMidScorePos();
+      // elevator.elevatorPivotMidScoringPosition();
+      elevator.elevatorScoreMid();
+
       //go to MID scoring position 
     }
     else if(xboxAux.getYButton())
@@ -337,8 +337,10 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
-      elevator.spoolTopScorePos();
-      elevator.highScoringPosition();
+      // elevator.spoolTopScorePos();
+      // elevator.elevatorPivotHighScoringPosition();
+      elevator.elevatorScoreTop();
+
       //go to HIGH scoring position
     }
 
@@ -346,11 +348,11 @@ public class Robot extends TimedRobot {
     //----------------------------------------------------------------------------------------------
     //  Elevator - Manual
     //----------------------------------------------------------------------------------------------
-    if(Math.abs(xboxAux.getRightY() )> 0.1 )    //TBD - Don't do this
-    {
-      elevator.manualExtension(xboxAux.getRightY());
-      //manual raise/lower elevator
-    }
+    
+
+    elevator.manualExtension(xboxAux.getRightY());
+
+    elevator.ignoreSpoolSoftLimit(xboxAux.getRightStickButton());
     
     if(xboxAux.getPOV() == DPAD_UP)
     {
@@ -372,7 +374,6 @@ public class Robot extends TimedRobot {
     {
       elevator.manualPivotControl(0.0);
     }
-
 
     //----------------------------------------------------------------------------------------------
     //  Claw

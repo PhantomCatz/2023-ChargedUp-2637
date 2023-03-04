@@ -14,9 +14,7 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.DataLogger.CatzLog;
-import frc.DataLogger.DataCollection;
-import frc.robot.Robot;
+
 
 public class CatzSwerveModule
 {
@@ -38,7 +36,7 @@ public class CatzSwerveModule
     private double flippedAngleError = 0.0;
 
     private double command;
-    private boolean driveDirectionFlipped = false;
+    public boolean driveDirectionFlipped = false;
 
     private double wheelOffset;
 
@@ -107,27 +105,33 @@ public class CatzSwerveModule
 
                 prevEncValue = encValue;
                 encValue = magEnc.get();
-                if(prevEncValue == encValue){
+                if(prevEncValue == encValue)
+                {
                     count++;
                 }
-                else{
+                else
+                {
                     count = 0;
                 }
 
-                if(count >= MAX_COUNT){
+                if(count >= MAX_COUNT)
+                {
                     dead = true;
                     count = MAX_COUNT;
                 }
-                else if(dead){
+                else if(dead)
+                {
                     dead = false;
                 }
 
-                if(chosenState.getSelected()){
+                if(chosenState.getSelected())
+                {
                     DRIVE_MOTOR.setNeutralMode(NeutralMode.Coast);
                     STEER_MOTOR.set(0.0);
                     DRIVE_MOTOR.set(ControlMode.PercentOutput, 0.0);
                 }
-                else{
+                else
+                {
                     DRIVE_MOTOR.setNeutralMode(NeutralMode.Brake); DRIVE_MOTOR.getSelectedSensorPosition();
                 }
 
@@ -254,11 +258,13 @@ public class CatzSwerveModule
     }
 
     /*Auto Balance */
-    public void reverseDrive(Boolean reverse){
+    public void reverseDrive(Boolean reverse)
+    {
         DRIVE_MOTOR.setInverted(reverse);
     }
 
-    public double getDriveMotorPosition(){
+    public double getDriveMotorPosition()
+    {
         return DRIVE_MOTOR.getSelectedSensorPosition();
     }
 }

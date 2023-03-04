@@ -80,7 +80,7 @@ public class DataCollection
     public static final int shift7 = 1 << 7;
 
 
-    /*public void updateLogDataID()
+    public void updateLogDataID()
     {
         if(chosenDataID.getSelected() == LOG_ID_NONE)
         {
@@ -92,7 +92,7 @@ public class DataCollection
         }
         setLogDataID(chosenDataID.getSelected());
 
-    }*/
+    }
 
     public void setLogDataID(final int dataID)
     {

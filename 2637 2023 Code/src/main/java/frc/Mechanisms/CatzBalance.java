@@ -89,7 +89,8 @@ public class CatzBalance
                         prevPitchAngle = pitchAngle;
                         prevTime = time;
 
-                        if(Robot.dataCollection.getLogDataID() == DataCollection.LOG_ID_BALANCE){
+                        if(DataCollection.getLogDataID() == DataCollection.LOG_ID_BALANCE)
+                        {
                             data = new CatzLog(time, pitchAngle, angleRate, power, pitchTerm, rateTerm, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
                             Robot.dataCollection.logData.add(data);
                         }

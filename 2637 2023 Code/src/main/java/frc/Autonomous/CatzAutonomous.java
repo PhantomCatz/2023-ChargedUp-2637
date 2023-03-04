@@ -97,8 +97,8 @@ public class CatzAutonomous
             drvSerrorRate = (drvScurrentError - drvSprevError) / (time - prevTime);
 
             drvSdistanceRemain = drvSdistance + (Robot.drivetrain.getAveragePosition() - drvSdistanceOffset) * DRVTRAIN_ENC_COUNTS_TO_INCH;
-            drvStargetPower = Clamp(-1.0, drvSdistanceRemain / drvSdistance / decelDistance, 1.0) * maxSpeed;
-            drvSturnPower = Clamp(-1.0, DRV_S_ERROR_GAIN * drvScurrentError + DRV_S_RATE_GAIN * drvSerrorRate, 1.0); //"-" in front of Error and Rate
+            drvStargetPower = -Clamp(-1.0, drvSdistanceRemain / drvSdistance / decelDistance, 1.0) * maxSpeed;
+            drvSturnPower = Clamp(-1.0,-DRV_S_ERROR_GAIN * drvScurrentError - DRV_S_RATE_GAIN * drvSerrorRate, 1.0); //"-" in front of Error and Rate
             
             if(Math.abs(drvStargetPower) < DRV_S_MIN_POWER)
             {
@@ -111,20 +111,22 @@ public class CatzAutonomous
             }
 
             Robot.drivetrain.translateTurn(drvSwheelPos, drvStargetPower, drvSturnPower, Robot.drivetrain.getGyroAngle()); //TBD need to check
-            Timer.delay(DRV_S_THREAD_PERIOD);
+            
 
             prevTime = time;
             drvSprevError = drvScurrentError;
 
-            if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_DRV_STRAIGHT)
+            if(DataCollection.getLogDataID() == DataCollection.LOG_ID_DRV_STRAIGHT)
             {
                 data = new CatzLog(Robot.currentTime.get(), drvSdistanceRemain, Robot.drivetrain.getAveragePosition(), drvStargetPower, drvScurrentError, drvScurrentAngle, drvSerrorRate, drvSturnPower, 
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
                 Robot.dataCollection.logData.add(data);
             }
+            Timer.delay(DRV_S_THREAD_PERIOD);
         }
 
-        Robot.drivetrain.autoDrive(0);
+        //Robot.drivetrain.autoDrive(0); do we need this? 
+        Robot.drivetrain.setDrivePower(0);
 
         startDriving = false;
     }
