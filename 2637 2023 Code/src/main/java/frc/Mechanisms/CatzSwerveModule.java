@@ -11,6 +11,8 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.DataLogger.CatzLog;
 import frc.DataLogger.DataCollection;
@@ -39,6 +41,14 @@ public class CatzSwerveModule
     private boolean driveDirectionFlipped = false;
 
     private double wheelOffset;
+
+    private final double FAULT_DETECT_DELTA_TIME = 0.02;
+    private final int MAX_COUNT = 100;
+    public static final SendableChooser<Boolean> chosenState = new SendableChooser<>();
+
+    private boolean dead = false;
+
+    private  Timer faultTimer;
 
     //current limiting
     private SupplyCurrentLimitConfiguration swerveModuleCurrentLimit;
@@ -72,9 +82,60 @@ public class CatzSwerveModule
         pid = new PIDController(kP, kI, kD);
 
         wheelOffset = offset;
+        faultTimer = new Timer();
 
         //for shuffleboard
         motorID = steerMotorID;
+        encoderFaultDetect();
+    }
+
+    public void encoderFaultDetect()
+    {
+        final Thread faultDetectThread = new Thread(() ->
+        {
+            int count = 0;
+            double prevEncValue;
+            double encValue = -1.0;
+
+            chosenState.setDefaultOption("Alive", true);
+            chosenState.addOption("Dead", false);
+            SmartDashboard.putData("Set enc " + motorID, chosenState);
+
+            while(true)
+            {
+                SmartDashboard.putBoolean("Enc " + motorID + " state", dead);
+
+                prevEncValue = encValue;
+                encValue = magEnc.get();
+                if(prevEncValue == encValue){
+                    count++;
+                }
+                else{
+                    count = 0;
+                }
+
+                if(count >= MAX_COUNT){
+                    dead = true;
+                    count = MAX_COUNT;
+                }
+                else if(dead){
+                    dead = false;
+                }
+
+                if(chosenState.getSelected()){
+                    DRIVE_MOTOR.setNeutralMode(NeutralMode.Coast);
+                    STEER_MOTOR.set(0.0);
+                    DRIVE_MOTOR.set(ControlMode.PercentOutput, 0.0);
+                }
+                else{
+                    DRIVE_MOTOR.setNeutralMode(NeutralMode.Brake); DRIVE_MOTOR.getSelectedSensorPosition();
+                }
+
+                Timer.delay(FAULT_DETECT_DELTA_TIME);
+            }
+        });
+
+        faultDetectThread.start();
     }
 
     public void initializeOffset()

@@ -72,9 +72,9 @@ public class CatzIndexer {
     private final double CONE_BLUE_THRESHOLD    = 0.2;
 
     //          SENSOR VARIABLES
-    private double RedValue = -999.0;
+    private double RedValue   = -999.0;
     private double GreenValue = -999.0;
-    private double BlueValue = -999.0;
+    private double BlueValue  = -999.0;
 
     private boolean beamBreakLFTContinuity = false;
     private boolean beamBreakRGTContinuity = false;

@@ -16,15 +16,15 @@ public class CatzAutonomousPaths
     private final SendableChooser<Boolean> chosenAllianceColor = new SendableChooser<>();
     private final SendableChooser<Integer> chosenPath = new SendableChooser<>();
 
-    private final double STRAIGHT = 0;
-    private final double RIGHT = -90; 
-    private final double LEFT = 90;
+    private final double STRAIGHT = 0.0;
+    public static double RIGHT = -90.0; 
+    public static double LEFT = 90.0;
 
     private final double TEMP_MAX_TIME = 8.0;
     private final double TEMP_DECEL_DIST = 0.05;
-    private final double MIN_DIST = 20;
-    private final double MAX_DIST = 244;
-    private final double GP_TO_GP = 48;
+    private final double MIN_DIST = 20.0;
+    private final double MAX_DIST = 244.0;
+    private final double GP_TO_GP = 48.0;
 
     public static boolean foward = false;
     public static boolean backward = false;
@@ -66,35 +66,50 @@ public class CatzAutonomousPaths
     // drive.DriveStraight(distance, decelDist, )
     public CatzAutonomousPaths() 
     {
-        if(all = true) 
+        /*if(all = true) 
         {
             foward = false;
             backward = false;
             right = false;
             left = false;
-        }
+        } 
         if(Robot.auton.getWheelPos() == 0.0 && Robot.auton.getDistance() > 0) 
         {
+            all = true;
             foward = true;
         }
         else if (Robot.auton.getWheelPos() == 0.0 && Robot.auton.getDistance() < 0) 
         {
+            all = true;
             backward = true;
         } 
         else if (Robot.auton.getWheelPos() == 90.0) 
         {
+            all = true;
             left = true;
         } 
         else if (Robot.auton.getWheelPos() == -90.0) 
         {
+            all = true;
             right = true;
         }
         else 
         {
             all = true;
-        }
+        }*/
     }
 
+    //"prioritize" means we focus on making these work first
+    // MVP 2 -> 3 -> 5 -> 1 -> 7 -> 6 -> 4 least important 
+    // every path should have option to not balance 
+
+    private final int CENTERRIGHTTUNNEL            = 1;
+    private final int CENTERLEFTTUNNEL             = 2; //prioritize
+    private final int FARLEFTBACKWARDSJ            = 3; //prioritize
+    private final int MANUALSTICKMOVEMENT          = 4;
+    private final int FARLEFTBOOMERANGCENTERLEFT   = 5; //prioritize
+    private final int FARRIGHTBOOMERANGCENTERRIGHT = 6;
+    private final int FARLEFTEXITCOMMUNITY         = 7;
     
     public void initializePathOptions()
     {
@@ -103,39 +118,89 @@ public class CatzAutonomousPaths
         SmartDashboard.putData(Robot.constants.ALLIANCE_COLOR, chosenAllianceColor);
 
         chosenPath.setDefaultOption(Robot.constants.POSITION_SELECTOR1, 1);
+        SmartDashboard.putData(Robot.constants.ALLIANCE_POSITION, chosenPath);
+
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR2, 2);
+        SmartDashboard.putData(Robot.constants.ALLIANCE_POSITION, chosenPath);
+
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR3, 3);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR4, 4);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR5, 5);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR6, 6);
         chosenPath.addOption(Robot.constants.POSITION_SELECTOR7, 7);
-        chosenPath.addOption(Robot.constants.POSITION_SELECTOR8, 8);
         SmartDashboard.putData(Robot.constants.ALLIANCE_POSITION, chosenPath);
     }
 
-    /*
-     * Path Selection
-     */
+    public void Red() 
+    {
+        RIGHT *= -1;
+        LEFT *= -1;
+    }
 
     public void determinePath()
     {
         if(chosenAllianceColor.getSelected() == Robot.constants.BLUE_ALLIANCE)
         {
-            if(chosenPath.getSelected() == LEFT)
+            if(chosenPath.getSelected() == CENTERRIGHTTUNNEL)
             {
-                path6();
+                centerRightTunnel();
             }
-           
-            
+            if(chosenPath.getSelected() == CENTERLEFTTUNNEL)
+            {
+                centerLeftTunnel();
+            }
+            if(chosenPath.getSelected() == FARLEFTBACKWARDSJ)
+            {
+                farLeftBackwardsJ();
+            }
+            if(chosenPath.getSelected() == MANUALSTICKMOVEMENT)
+            {
+                manualStickMovement();
+            }
+            if(chosenPath.getSelected() == FARLEFTBOOMERANGCENTERLEFT)
+            {
+                farLeftBoomerangCenterLeft();
+            }
+            if(chosenPath.getSelected() == FARRIGHTBOOMERANGCENTERRIGHT)
+            {
+                farRightBoomerangCenterRight();
+            }
+            if(chosenPath.getSelected() == FARLEFTEXITCOMMUNITY)
+            {
+                farLeftExitCommunity();
+            }
         }
         else
         {
-            if(chosenPath.getSelected() == LEFT)
+            if(chosenPath.getSelected() == CENTERLEFTTUNNEL)
             {
-                //Robot.auton.redLeftFender();
+                Red(); centerLeftTunnel();
+            }
+            if(chosenPath.getSelected() == CENTERRIGHTTUNNEL)
+            {
+                Red(); centerRightTunnel(); 
+            }
+            if(chosenPath.getSelected() == FARLEFTBACKWARDSJ)
+            {
+                Red(); farLeftBackwardsJ(); 
+            }
+            if(chosenPath.getSelected() == MANUALSTICKMOVEMENT)
+            {
+                Red(); manualStickMovement(); 
+            }
+            if(chosenPath.getSelected() == FARRIGHTBOOMERANGCENTERRIGHT)
+            {
+                Red(); farRightBoomerangCenterRight(); 
+            }
+            if(chosenPath.getSelected() == FARLEFTBOOMERANGCENTERLEFT)
+            {
+                Red(); farRightBoomerangCenterRight(); 
+            }
+            if(chosenPath.getSelected() == FARLEFTEXITCOMMUNITY)
+            {
+                Red(); farLeftExitCommunity(); 
             }
            
-            
         }
     }
 
@@ -144,30 +209,6 @@ public class CatzAutonomousPaths
         Robot.balance.StopBalancing();
         Robot.auton.StopDriving();
     }
-
-    public void path6()
-    {
-        Robot.auton.DriveStraight(50, 0.1, 0.35, 0.0, 8.0);
-        Robot.auton.StopDriving();
-        Robot.balance.StartBalancing();
-    }
-
-    /*public void Path6() 
-    { //See slide 6 (2637 Charged Up autonomous Paths in Google Drive) 
-        drive.DriveStraight(-40, 0.05, -0.25, 0.0, 8.0);
-        drive.DriveStraight(224, 0.05, 0.35, 0.0, 8.0);
-        drive.DriveStraight(-224, 0.05, -0.35, 0.0, 8.0);
-        drive.DriveStraight(60, 0.05, 0.25, -90.0, 8.0);
-        drive.DriveStraight(65, 0.05, 0.25, 0.0, 8.0);
-        drive.StopDriving();
-        balance.StartBalancing();
-    
-    }*/
-
-    
-
-   
-
     
     public void gridToCenter() 
     {
@@ -289,7 +330,7 @@ public class CatzAutonomousPaths
         Robot.balance.StartBalancing();
     }
 
-    public void ManualStickMovement() //33 points; starts between april tags 7-8(blue), 3-2(red); balance = true; #4
+    public void manualStickMovement() //33 points; starts between april tags 7-8(blue), 3-2(red); balance = true; #4
     {
         pathing = true;
         path = "Manual Car Stick";
@@ -329,7 +370,7 @@ public class CatzAutonomousPaths
         //pickup cone
         centerToGrid();
         //score cone
-        gridToChargingStation();
+        gridToChargingStation(); //have if/else statement to 
 
         Robot.auton.StopDriving();
         pathing = false;

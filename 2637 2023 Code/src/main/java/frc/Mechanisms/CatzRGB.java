@@ -86,13 +86,13 @@ public class CatzRGB
 
     public void LEDWork()
     {
-        if(Robot.robotDisabled)
+        if(Robot.isInDisabled() == true)
         {
            // need to add pingpong team color
         }
-        else if(Robot.inAuton == true)
+        else if(Robot.isInAuton() == true)
         {
-            if(Robot.autobalancing == true)
+            if(Robot.balance.startBalance == true)
             {
                 solidColor(GREEN);
             }
@@ -106,11 +106,11 @@ public class CatzRGB
                 }
             }
         }
-        else if(Robot.cubeOnboard == true)
+        else if(Robot.indexer.isConeDetected == true)
         {
             solidColor(PURPLE);
         }
-        else if(Robot.coneOnboard == true)
+        else if(Robot.indexer.isConeDetected == true)
         {
             solidColor(YELLOW);
         }

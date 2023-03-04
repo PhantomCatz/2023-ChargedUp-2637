@@ -59,8 +59,8 @@ public class DataCollection
     private final String LOG_HDR_INDEXER = "";
     private final String LOG_HDR_ELEVATOR = "";
     private final String LOG_HDR_CLAW = "";
-    private final String LOG_HDR_DRV_STRAIGHT = "time,d_rem,enc_pos,power,angle_err,angle,rate,turn_power";
-    private final String LOG_HDR_TURN_IN_PLACE = "";
+    private final String LOG_HDR_DRV_STRAIGHT = "time, d_rem,enc_pos,power,angle_err,angle,rate,turn_power";
+    private final String LOG_HDR_TURN_IN_PLACE = "time, cur-angle, cur-err, mtr-pwr";
 
     public String logStr;
 

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PneumaticHub;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -21,6 +22,7 @@ import frc.DataLogger.CatzLog;
 import frc.DataLogger.DataCollection;
 
 import frc.Mechanisms.CatzBalance;
+import frc.Mechanisms.CatzClaw;
 import frc.Mechanisms.CatzDrivetrain;
 import frc.Mechanisms.CatzElevator;
 import frc.Mechanisms.CatzIntake;
@@ -67,7 +69,7 @@ public class Robot extends TimedRobot {
   private XboxController xboxDrv;
   private XboxController xboxAux;
 
-  public static CatzRGB catzRGB;
+  public static  CatzRGB catzRGB;
 
   public static boolean robotDisabled = false;
   public static boolean coneOnboard = false;
@@ -93,6 +95,7 @@ public class Robot extends TimedRobot {
   public static CatzIntake          intake;
   public static CatzElevator        elevator;
   public static CatzIndexer         indexer; 
+  public static CatzClaw            claw;
 
 
   public static Timer               currentTime;      //TBD - what is this intended for?
@@ -159,6 +162,8 @@ public class Robot extends TimedRobot {
     intake         = new CatzIntake();
     elevator       = new CatzElevator();
     indexer        = new CatzIndexer();
+    catzRGB        = new CatzRGB();
+    claw           = new CatzClaw();
 
 
     currentTime = new Timer();
@@ -181,39 +186,6 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("NavX", navX.getAngle());
 
     //drivetrain.testAngle();
-
-    
-    if(!(isDisabled()))
-    {
-      robotDisabled = false;
-      if(isAutonomous())
-      {
-        if(balance.startBalance)
-        {
-          autobalancing = true;
-        }
-        inAuton = true;
-      }
-      else
-      {
-        if(indexer.isConeDetected == true)
-        {
-          coneOnboard = true;
-        }
-        else if(indexer.isCubeDetected == true)
-        {
-          cubeOnboard = true;
-        }
-
-      }
-
-      
-      
-    }
-    else
-    {
-      robotDisabled = true;
-    }
     
     catzRGB.LEDWork();
   }
@@ -298,6 +270,8 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic()
   {
+    //indexer.inDexerMtrCtrlFRNT.set(-.8); // to delete
+    //intake.intakeRollerIn();
     //----------------------------------------------------------------------------------------------
     //  Drivetrain
     //----------------------------------------------------------------------------------------------
@@ -327,6 +301,11 @@ public class Robot extends TimedRobot {
     elevator.cmdProcGoToPositionScoreHigh(xboxAux.getYButton());*/
 
     //TBD HOW DO WE GO TO STOW POSITION???
+    
+    if(Math.abs(xboxAux.getRightY()) >= 0.1)
+    {
+      elevator.manualExtension(xboxAux.getRightY());
+    }
 
     if(xboxAux.getAButton())
     {
@@ -398,14 +377,8 @@ public class Robot extends TimedRobot {
     //----------------------------------------------------------------------------------------------
     //  Claw
     //----------------------------------------------------------------------------------------------
-    if(xboxAux.getXButton())
-    {
-      //open claw
-    }
-    else
-    {
-      //close claw
-    }
+    claw.procCmdClaw(xboxAux.getXButton(),      //Open Claw
+                     xboxAux.getXButton() );    //lose Claw
   
 
     //----------------------------------------------------------------------------------------------
@@ -495,5 +468,15 @@ public class Robot extends TimedRobot {
     public void zeroGyro()
     {
       navX.setAngleAdjustment(-navX.getYaw());
+    }
+
+    public static boolean isInAuton()
+    {
+      return DriverStation.isAutonomous();
+    }
+
+    public static boolean isInDisabled()
+    {
+      return DriverStation.isDisabled();
     }
 }
