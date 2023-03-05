@@ -59,7 +59,7 @@ public class CatzBalance
                 timer.reset();
                 timer.start();
 
-                if(Robot.dataCollection.getLogDataID() == Robot.dataCollection.LOG_ID_BALANCE)
+                if(DataCollection.getLogDataID() == DataCollection.LOG_ID_BALANCE)
                 {
                     data = new CatzLog(ANG_SLOWBAND, ANG_GAIN, RATE_GAIN, MAX_POWER, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
                     Robot.dataCollection.logData.add(data);
@@ -119,12 +119,14 @@ public class CatzBalance
         startBalance = false;
     }
 
-    public void SmartDashboardBalanceDebug(){
+    public void SmartDashboardBalanceDebug()
+    {
         SmartDashboard.putNumber("Pitch Rate", angleRate);
         SmartDashboard.putNumber("Power", power);
     }
 
-    public void SmartDashboardBalance(){
+    public void SmartDashboardBalance()
+    {
         SmartDashboard.putNumber("Pitch", pitchAngle);
     }
 }

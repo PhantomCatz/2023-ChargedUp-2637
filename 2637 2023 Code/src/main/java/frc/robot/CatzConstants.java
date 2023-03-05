@@ -3,7 +3,7 @@ package frc.robot;
 public class CatzConstants 
 {
   
-    public static final double ROBOT_LENGTH = 31; //drivetrain chassy not extended- about 30.875- previously 39
+    public static final double ROBOT_LENGTH = 29; //drivetrain chassy not extended- about 30.875- previously 39
     public static final double ROBOT_WIDTH = 29; //drivetrain chassy not extended- previously 35
     public static final double HALF_ROBOT_LENGTH = ROBOT_LENGTH/2;
     public static final double HALF_ROBOT_WIDTH = ROBOT_WIDTH/2;

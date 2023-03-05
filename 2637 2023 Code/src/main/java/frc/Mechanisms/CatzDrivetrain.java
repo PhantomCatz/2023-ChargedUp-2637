@@ -245,6 +245,7 @@ public class CatzDrivetrain
         RT_FRNT_MODULE.setBrakeMode();
         RT_BACK_MODULE.setBrakeMode();
     }
+    
     public void setCoastMode()
     {
         LT_FRNT_MODULE.setCoastMode();
@@ -271,17 +272,22 @@ public class CatzDrivetrain
      * Auto Balance stuff
      */
 
-     public double boolToInt(double f, boolean b){
-        if(b){
+     public double boolToInt(double f, boolean b)
+     {
+        if(b)
+        {
             return f;
         }
-        else{
+        else
+        {
             return -f;
         }
     }
     
-    public double getAveragePosition(){
-        return (
+    public double getAveragePosition()
+    {
+        return 
+        (
             boolToInt(LT_FRNT_MODULE.getDriveMotorPosition(), LT_FRNT_MODULE.driveDirectionFlipped) + 
             boolToInt(LT_BACK_MODULE.getDriveMotorPosition(), LT_BACK_MODULE.driveDirectionFlipped) + 
             boolToInt(RT_FRNT_MODULE.getDriveMotorPosition(), RT_FRNT_MODULE.driveDirectionFlipped) + 
@@ -289,7 +295,8 @@ public class CatzDrivetrain
         ) / 4.0;
     }
 
-    public void reverseAllDrive(Boolean reverse){
+    public void reverseAllDrive(Boolean reverse)
+    {
         LT_FRNT_MODULE.reverseDrive(reverse);
         LT_BACK_MODULE.reverseDrive(reverse);
         RT_FRNT_MODULE.reverseDrive(reverse);

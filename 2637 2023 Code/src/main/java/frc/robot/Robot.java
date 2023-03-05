@@ -216,7 +216,7 @@ public class Robot extends TimedRobot {
     currentTime.reset();
     currentTime.start();
 
-    dataCollection.setLogDataID(dataCollection.LOG_ID_DRV_STRAIGHT);  //TBD Pull from shuffleboard
+    //dataCollection.setLogDataID(dataCollection.LOG_ID_DRV_STRAIGHT);  //TBD Pull from shuffleboard
     dataCollection.startDataCollection();                             //TBD where do we want to do this since also used in teleop?  robotInit???
 
     drivetrain.initializeOffsets();     //TBD - Nicholas Update
@@ -259,7 +259,7 @@ public class Robot extends TimedRobot {
     currentTime.reset();            //TBD
     currentTime.start();
 
-    dataCollection.setLogDataID(dataCollection.LOG_ID_INTAKE);
+    //dataCollection.setLogDataID(dataCollection.LOG_ID_INTAKE);
     dataCollection.startDataCollection();
   }
 

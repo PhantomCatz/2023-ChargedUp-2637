@@ -42,6 +42,16 @@ public class CatzAutonomousPaths
 
     public static String path;
 
+            
+    private final int CENTER_PRELOAD_TAXI_BALANCE = 1;
+    private final int SIDE_PRELOAD_INTAKE_SCORE = 2;
+    private final int SIDE_2_PRELOAD_INTAKE_SCORE_BALANCE = 3;
+    private final int DEFENSE_PRELOAD_POSITIONING = 4;
+    private final int CENTER_RIGHT_TUNNEL = 5;
+    private final int MANUAL_STICK_MOVEMENT = 6;
+    private final int FAR_LEFT_BOOMERANG_CENTER_LEFT = 7;
+    private final int FAR_RIGHT_BOOMERANG_CENTER_RIGHT = 8;
+
      /*  DRIVE STRAIGHT VALUES: 
      * if distance > 70, then FAST, else SLOW
      * 8 second maxTime is an arbitrary number, subject to change upon more testing 
@@ -124,7 +134,8 @@ public class CatzAutonomousPaths
         SmartDashboard.putData(Robot.constants.BALANCE, chosenBalance);
     }
 
-    public void Red() {
+    public void Red() 
+    {
         RIGHT *= -1;
         LEFT *= -1;
     }
@@ -214,15 +225,7 @@ public class CatzAutonomousPaths
         Robot.auton.DriveStraight(0, TEMP_DECEL_DIST, SLOW, STRAIGHT, TEMP_MAX_TIME);
     }
 
-            
-    private final int CENTER_PRELOAD_TAXI_BALANCE = 1;
-    private final int SIDE_PRELOAD_INTAKE_SCORE = 2;
-    private final int SIDE_2_PRELOAD_INTAKE_SCORE_BALANCE = 3;
-    private final int DEFENSE_PRELOAD_POSITIONING = 4;
-    private final int CENTER_RIGHT_TUNNEL = 5;
-    private final int MANUAL_STICK_MOVEMENT = 6;
-    private final int FAR_LEFT_BOOMERANG_CENTER_LEFT = 7;
-    private final int FAR_RIGHT_BOOMERANG_CENTER_RIGHT = 8;
+    
     
     public void determinePath()
     {
