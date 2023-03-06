@@ -139,7 +139,7 @@ public class Robot extends TimedRobot {
     //----------------------------------------------------------------------------------------------
     //PDH
     
-    pneumaticHub = new PneumaticHub(PH_CAN_ID);
+    //pneumaticHub = new PneumaticHub(PH_CAN_ID);
     navX = new AHRS();
     navX.reset();
     navX.setAngleAdjustment(-navX.getYaw());  //TBD - What is this for?
@@ -185,11 +185,12 @@ public class Robot extends TimedRobot {
     //For each mechanism - debug and comp
     SmartDashboard.putNumber("NavX", navX.getAngle());
 
-    //drivetrain.testAngle();
     elevator.smartDashboardElevator();
-    elevator.getEncPuts();
+    elevator.smartDashboardElevator_DEBUG();
     
     catzRGB.LEDWork();
+    intake.smartDashboardIntake();
+    intake.smartDashboardIntake_Debug();
   }
 
 
@@ -253,7 +254,6 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() 
   {
-
     drivetrain.setBrakeMode();      //TBD
 
     currentTime.reset();            //TBD
@@ -272,6 +272,16 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic()
   {
+    indexer.indexerMtrCtrlFRNT.set(-0.3);
+    if(xboxDrv.getXButton() == true)
+    {
+      indexer.runSideBelts();
+    }
+    else
+    {
+      indexer.runSideBeltsOFF();
+    }
+
     //indexer.inDexerMtrCtrlFRNT.set(-.8); // to delete
     //intake.intakeRollerIn();
     //----------------------------------------------------------------------------------------------
@@ -298,12 +308,13 @@ public class Robot extends TimedRobot {
     //----------------------------------------------------------------------------------------------
     //  Elevator - Automated
     //----------------------------------------------------------------------------------------------
-    /*elevator.cmdProcGoToPositionScoreLow (xboxAux.getAButton());
-    elevator.cmdProcGoToPositionScoreMid (xboxAux.getBButton());
-    elevator.cmdProcGoToPositionScoreHigh(xboxAux.getYButton());*/
+    
+    // elevator.cmdProcGoToPositionScoreLow (xboxAux.getAButton());
+    // elevator.cmdProcGoToPositionScoreMid (xboxAux.getBButton());
+    // elevator.cmdProcGoToPositionScoreHigh(xboxAux.getYButton());
 
     //TBD HOW DO WE GO TO STOW POSITION???
-    
+
     if(xboxAux.getAButton())
     {
       if(intakeState == DEPLOYED)
@@ -343,6 +354,19 @@ public class Robot extends TimedRobot {
 
       //go to HIGH scoring position
     }
+    else if(xboxAux.getXButton())
+    {
+      if(intakeState == DEPLOYED)
+      {
+        //stow intake
+        intakeState = STOWED;
+      }
+      // elevator.spoolTopScorePos();
+      // elevator.elevatorPivotHighScoringPosition();
+      elevator.elevatorStow();
+
+      //go to HIGH scoring position
+    }
 
 
     //----------------------------------------------------------------------------------------------
@@ -361,25 +385,26 @@ public class Robot extends TimedRobot {
         //stow intake
         intakeState = STOWED;
       }
-      elevator.manualPivotControl(0.3);
+      elevator.manualPivotControl(-0.1);
       //while pressed, deploy elevator
     
     }
     else if(xboxAux.getPOV() == DPAD_DN)
     {
       //while pressed, pivot elevator
-      elevator.manualPivotControl(-0.3);
+      elevator.manualPivotControl(0.1);
     }
     else
     {
       elevator.manualPivotControl(0.0);
     }
 
+
     //----------------------------------------------------------------------------------------------
     //  Claw
     //----------------------------------------------------------------------------------------------
-    claw.procCmdClaw(xboxAux.getXButton(),      //Open Claw
-                     xboxAux.getXButton() );    //lose Claw
+    //claw.procCmdClaw(xboxAux.getXButton(),      //Open Claw
+    //                 xboxAux.getXButton() );    //lose Claw
   
 
     //----------------------------------------------------------------------------------------------

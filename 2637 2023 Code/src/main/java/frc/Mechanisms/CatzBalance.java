@@ -59,7 +59,7 @@ public class CatzBalance
                 timer.reset();
                 timer.start();
 
-                if(DataCollection.getLogDataID() == DataCollection.LOG_ID_BALANCE)
+                if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_BALANCE)
                 {
                     data = new CatzLog(ANG_SLOWBAND, ANG_GAIN, RATE_GAIN, MAX_POWER, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
                     Robot.dataCollection.logData.add(data);
@@ -89,7 +89,7 @@ public class CatzBalance
                         prevPitchAngle = pitchAngle;
                         prevTime = time;
 
-                        if(DataCollection.getLogDataID() == DataCollection.LOG_ID_BALANCE)
+                        if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_BALANCE)
                         {
                             data = new CatzLog(time, pitchAngle, angleRate, power, pitchTerm, rateTerm, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
                             Robot.dataCollection.logData.add(data);
