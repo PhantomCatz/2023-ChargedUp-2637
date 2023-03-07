@@ -10,16 +10,19 @@ import frc.robot.Robot;
 
 public class CatzRGB 
 {
-    private final int LED_COUNT = 22;
+    private final int LED_COUNT = 54;
     private final int COLOR1_LED_COUNT = LED_COUNT / 2;
 
     private final int MAX_LED_BUFFER_INDEX = LED_COUNT - 1;
 
-    private final int LED_PWM_PORT = 0;
+    private final int LED_PWM_PORT_FRNT = 0;
+    private final int LED_PWM_PORT_BACK = 3;
 
-    private AddressableLED led;
+    private AddressableLED ledFrnt;
+    //private AddressableLED ledBack;
 
-    private AddressableLEDBuffer ledBuffer;
+    private AddressableLEDBuffer ledBufferFrnt;
+    //private AddressableLEDBuffer ledBufferBack;
     
     private Color RED    = Color.kRed;
     private Color ORANGE = Color.kOrange;
@@ -47,14 +50,28 @@ public class CatzRGB
 
     private ArrayList<Color> ledPattern;
 
+    private final boolean LED_ON = true;
+    private final boolean LED_OFF = true;
+    private boolean LED_FRNT = LED_OFF;
+
+    
+
 
     public CatzRGB()
     {
-        led = new AddressableLED(LED_PWM_PORT);
-        ledBuffer = new AddressableLEDBuffer(LED_COUNT);
-        led.setLength(ledBuffer.getLength());
-        led.setData(ledBuffer);
-        led.start();
+        ledFrnt = new AddressableLED(LED_PWM_PORT_FRNT);
+        //ledBack = new AddressableLED(LED_PWM_PORT_BACK);
+
+        ledBufferFrnt = new AddressableLEDBuffer(LED_COUNT);
+       // ledBufferBack = new AddressableLEDBuffer(LED_COUNT);
+
+        ledFrnt.setLength(ledBufferFrnt.getLength());
+        ledFrnt.setData(ledBufferFrnt);
+        ledFrnt.start();
+
+       // ledBack.setLength(ledBufferBack.getLength());
+        //ledBack.setData(ledBufferBack);
+        //ledBack.start();
 
         ledPattern = new ArrayList<Color>(LED_COUNT);
 
@@ -88,6 +105,7 @@ public class CatzRGB
     {
         if(Robot.isInDisabled() == true)
         {
+            solidColor(GREEN);
            // need to add pingpong team color
         }
         else if(Robot.isInAuton() == true)
@@ -142,8 +160,20 @@ public class CatzRGB
             }
         }
         
+        //solidColor(GREEN);
         ledDelay++;
-        led.setData(ledBuffer);
+        ledFrnt.setData(ledBufferFrnt);
+       /*  if(checkGyro())
+        {
+            ledFrnt.setData(ledBufferFrnt);
+        }
+        else
+        {
+            ledFrnt.setData(ledBufferFrnt);
+            //ledBack.setData(ledBufferBack);
+        }   */  
+        
+        
     }
     
     public void flash(Color color1, Color color2)
@@ -169,7 +199,14 @@ public class CatzRGB
     {
         for(int i = 0; i < LED_COUNT; i++)
         {
-            ledBuffer.setLED(i, color);
+            if(checkGyro())
+            {
+                ledBufferFrnt.setLED(i, color);
+            }
+            else
+            {
+                //ledBufferBack.setLED(i, color);
+            }
         }
     }
 
@@ -178,7 +215,15 @@ public class CatzRGB
         for(ledIndex = 0; ledIndex < LED_COUNT; ledIndex++)
         {
             arrayIndex = (flowArrayOffset + ledIndex) % LED_COUNT;
-            ledBuffer.setLED(ledIndex, ledPattern.get(arrayIndex));
+            if(checkGyro())
+            {
+                ledBufferFrnt.setLED(ledIndex, ledPattern.get(arrayIndex));
+            }
+            else 
+            {
+                //ledBufferBack.setLED(ledIndex, ledPattern.get(arrayIndex));
+            }
+            
         }
         
         flowArrayOffset++;
@@ -194,7 +239,15 @@ public class CatzRGB
         for(ledIndex = 0; ledIndex < LED_COUNT; ledIndex++)
         {
             arrayIndex = (flowArrayOffset + ledIndex) % LED_COUNT;
-            ledBuffer.setLED(ledIndex, ledPattern.get(arrayIndex));
+            if(checkGyro())
+            {
+                ledBufferFrnt.setLED(ledIndex, ledPattern.get(arrayIndex));
+            }
+            else
+            {
+               // ledBufferBack.setLED(ledIndex, ledPattern.get(arrayIndex));
+            }
+           
         }
         
         flowArrayOffset--;
@@ -203,5 +256,18 @@ public class CatzRGB
         {
             flowArrayOffset = MAX_LED_BUFFER_INDEX;
         }
+    }
+
+    public boolean checkGyro()
+    {
+        if(Math.abs(Robot.drivetrain.getGyroAngle()) <90 )
+        {
+            LED_FRNT = LED_OFF;
+        }
+        else
+        {
+            LED_FRNT = LED_ON;
+        }
+        return LED_FRNT;
     }
 }

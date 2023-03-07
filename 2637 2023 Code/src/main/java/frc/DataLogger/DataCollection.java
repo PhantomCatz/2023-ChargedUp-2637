@@ -3,6 +3,7 @@ package frc.DataLogger;
 import java.util.ArrayList;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
@@ -79,6 +80,10 @@ public class DataCollection
     public static final int shift6 = 1 << 6;
     public static final int shift7 = 1 << 7;
 
+    public DataCollection()
+    {
+        dataCollectionShuffleboard();
+    }
 
     public void updateLogDataID()
     {
@@ -108,7 +113,7 @@ public class DataCollection
 
         logData = list;
 
-        dataCollectionShuffleboard();
+        //dataCollectionShuffleboard();
 
         dataThread = new Thread( () ->
         {
@@ -138,6 +143,7 @@ public class DataCollection
     public void dataCollectionShuffleboard()
     {
         chosenDataID.setDefaultOption("None",        LOG_ID_NONE);
+        
         chosenDataID.addOption("Swerve Steering", LOG_ID_SWERVE_STEERING);
         chosenDataID.addOption("Swerve Driving", LOG_ID_SWERVE_DRIVING);
         chosenDataID.addOption("Balance Data",       LOG_ID_BALANCE);
@@ -149,6 +155,7 @@ public class DataCollection
         chosenDataID.addOption("Auton Turn In Place", LOG_ID_TURN_IN_PLACE);
 
         SmartDashboard.putData("Data Collection", chosenDataID);
+    
     }
 
     public void startDataCollection() 

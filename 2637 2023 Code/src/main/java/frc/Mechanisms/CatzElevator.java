@@ -56,7 +56,8 @@ public class CatzElevator {
     private final double  ELEVATOR_PIVOT_CURRENT_LIMIT_TIMEOUT_SECONDS = 0.5;
     private final boolean ELEVATOR_PIVOT_ENABLE_CURRENT_LIMIT          = true;
 
-    private final double PIVOT_CNTS_PER_REVOLUTION = 2048.0;    //TBD - check value
+    private final double CANCODER_CNTS_PER_REVOLUTION = 4096.0;    //TBD - check value
+    private final double TALON_CNTS_PER_REVOLUTION = 2048.0;
 
     private final double ELEVATOR_PIVOT_VERSA_STAGE_1_RATIO = 7.0;
     private final double ELEVATOR_PIVOT_VERSA_STAGE_2_RATIO = 10.0;
@@ -69,12 +70,12 @@ public class CatzElevator {
     private final double ELEVATOR_PIVOT_FINAL_RATIO   = ELEVATOR_PIVOT_VERSA_FINAL_RATIO * ELEVATOR_PIVOT_GEAR_RATIO;
     private final double ELEVATOR_PIVOT_FINAL_RATIO_ABS   = 1.0;
 
-    private final double ELEVATOR_PIVOT_CNTS_PER_DEGREE = (PIVOT_CNTS_PER_REVOLUTION / 360.0) / ELEVATOR_PIVOT_FINAL_RATIO;  
-    private final double ELEVATOR_PIVOT_CNTS_PER_DEGREE_ABS_ENC = (PIVOT_CNTS_PER_REVOLUTION / 360.0) / ELEVATOR_PIVOT_FINAL_RATIO_ABS; 
+    private final double ELEVATOR_PIVOT_CNTS_PER_DEGREE         = (TALON_CNTS_PER_REVOLUTION    / 360.0) / ELEVATOR_PIVOT_FINAL_RATIO;  
+    private final double ELEVATOR_PIVOT_CNTS_PER_DEGREE_ABS_ENC = (CANCODER_CNTS_PER_REVOLUTION / 360.0) / ELEVATOR_PIVOT_FINAL_RATIO_ABS; 
 
     //private final double ELEVATOR_PIVOT_DEGREES_PER_CNT = (ELEVATOR_PIVOT_FINAL_RATIO / PIVOT_CNTS_PER_REVOLUTION) * 360.0;
 
-    private final double PIVOT_OFFSET = 3400.0;    // From 3/5 -hs
+    private final double PIVOT_OFFSET = 1365.0;    // From 3/5 -hs
 
     private final double ELEVATOR_PIVOT_SCORE_ANGLE_HIGH_DEG = -40.0;
     private final double ELEVATOR_PIVOT_SCORE_ANGLE_MID_DEG  = -40.0;
@@ -201,7 +202,7 @@ public class CatzElevator {
         System.out.println("LOW" + ELEVATOR_PIVOT_SCORE_ANGLE_LOW_CNTS);
         System.out.println("STOW" + ELEVATOR_PIVOT_ANGLE_STOW_CNTS);
         System.out.println("GEAR" + ELEVATOR_PIVOT_FINAL_RATIO_ABS);
-        System.out.println("CT DEGREE" + ELEVATOR_PIVOT_CNTS_PER_DEGREE);
+        System.out.println("CT DEGREE" + ELEVATOR_PIVOT_CNTS_PER_DEGREE_ABS_ENC);
 
         /************************************************************************************
          * spool
@@ -623,9 +624,18 @@ public class CatzElevator {
         }
     }
 
+    double rawAbsEncCountValue;
+
     public double updatePivotCurrentAngle()
     {
-        pivotCurrentAngle = (elevatorPivotMtrLT.getSelectedSensorPosition() + PIVOT_OFFSET) * ELEVATOR_PIVOT_CNTS_PER_DEGREE_ABS_ENC;
+        
+        rawAbsEncCountValue = elevatorPivotMtrLT.getSelectedSensorPosition();
+
+        //rawAbsEncCountValue = elevatorPivotMtrLT.;
+        
+        pivotCurrentAngle = (rawAbsEncCountValue - PIVOT_OFFSET) / ELEVATOR_PIVOT_CNTS_PER_DEGREE_ABS_ENC;
+
+
         return pivotCurrentAngle;
     }
 
@@ -649,6 +659,7 @@ public class CatzElevator {
         SmartDashboard.putNumber("LTclosedError PIVOT", elevatorPivotMtrLT.getClosedLoopError());
         SmartDashboard.putNumber("EncRawValue PIVOT", pivotAbsoluteEnc.getPosition());
         SmartDashboard.putNumber("PivotCurrentAngle ", updatePivotCurrentAngle());
+        SmartDashboard.putNumber("Raw enc value: ", rawAbsEncCountValue);
         SmartDashboard.putNumber("EncRawValue PIVOT", pivotAbsoluteEnc.getAbsolutePosition());
         SmartDashboard.putNumber("SelectedSensorPositionPIVOT", elevatorPivotMtrLT.getSelectedSensorPosition());
 

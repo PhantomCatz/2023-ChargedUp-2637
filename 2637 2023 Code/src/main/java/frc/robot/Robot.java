@@ -132,6 +132,7 @@ public class Robot extends TimedRobot {
 
     dataCollection = new DataCollection();
     dataArrayList  = new ArrayList<CatzLog>();
+    
     dataCollection.dataCollectionInit(dataArrayList);
 
     //----------------------------------------------------------------------------------------------
@@ -161,12 +162,15 @@ public class Robot extends TimedRobot {
     drivetrain     = new CatzDrivetrain();
     intake         = new CatzIntake();
     elevator       = new CatzElevator();
-    indexer        = new CatzIndexer();
+    //indexer        = new CatzIndexer();
     catzRGB        = new CatzRGB();
     claw           = new CatzClaw();
 
     currentTime = new Timer();
+
+    paths.initializePathOptions();
   }
+
 
 
   /*-----------------------------------------------------------------------------------------
@@ -187,6 +191,7 @@ public class Robot extends TimedRobot {
 
     elevator.smartDashboardElevator();
     elevator.smartDashboardElevator_DEBUG();
+
     
     catzRGB.LEDWork();
     intake.smartDashboardIntake();
