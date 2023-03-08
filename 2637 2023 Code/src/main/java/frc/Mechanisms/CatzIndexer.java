@@ -371,7 +371,7 @@ public class CatzIndexer{
 
 
     }
-    public void SmartDashboardIndexer_Debug()
+   /* public void SmartDashboardIndexer_Debug()
     {
         SmartDashboard.putNumber("TraceID", finalStateINT);
         SmartDashboard.putNumber("Encoder Position", m_encoder.getPosition());
@@ -382,7 +382,7 @@ public class CatzIndexer{
         SmartDashboard.putNumber("Blue", detectedColor.blue);
         SmartDashboard.putNumber("IR", IR);
         SmartDashboard.putBoolean("BeamBreak", beamBreakContinuity);
-    }
+    }*/
 
     public void DataCollectionINDEXER()
     {

@@ -119,6 +119,7 @@ public class CatzBalance
         startBalance = false;
     }
 
+    
     public void SmartDashboardBalanceDebug()
     {
         SmartDashboard.putNumber("Pitch Rate", angleRate);

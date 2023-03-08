@@ -84,10 +84,10 @@ public class CatzSwerveModule
 
         //for shuffleboard
         motorID = steerMotorID;
-        encoderFaultDetect();
+        
     }
 
-    public void encoderFaultDetect()
+    public void encoderFaultDetect() //not working, needs to be fixed
     {
         final Thread faultDetectThread = new Thread(() ->
         {
@@ -250,11 +250,15 @@ public class CatzSwerveModule
         return flippedAngleError;
     }
 
-    public void updateShuffleboard()
+    public void smartDashboardModules()
     {
-        SmartDashboard.putNumber(motorID + " Mag Encoder", magEnc.get() );//* 360.0);
         SmartDashboard.putNumber(motorID + " Wheel Angle", (currentAngle));
-        //SmartDashboard.putBoolean(motorID + " Flipped", driveDirectionFlipped);
+    }
+
+    public void smartDashboardModules_DEBUG()
+    {
+        SmartDashboard.putNumber(motorID + " Mag Encoder", magEnc.get() );
+        SmartDashboard.putBoolean(motorID + " Flipped", driveDirectionFlipped);
     }
 
     /*Auto Balance */

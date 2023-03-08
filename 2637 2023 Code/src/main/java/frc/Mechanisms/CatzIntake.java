@@ -353,7 +353,7 @@ public class CatzIntake {
                     angleDot = 0.0;
                   }  else 
                   {
-                    System.out.println("else statement of delta angle");
+                    //System.out.println("else statement of delta angle");
                     angleDot = deltaAngle / deltaTime;
                     
                   }
@@ -397,7 +397,7 @@ public class CatzIntake {
                 } 
                 else
                 {
-                  System.out.println("stow active");
+                  //System.out.println("stow active");
                   intakeState = 2;
                   deltaAngle   = currentAngle - angleOld;
                   angleOld     = currentAngle;
@@ -411,7 +411,7 @@ public class CatzIntake {
                     angleDot = 0.0;
                   }  else 
                   {
-                    System.out.println("else statement of delta angle");
+                    //System.out.println("else statement of delta angle");
                     angleDot = deltaAngle / deltaTime;
 
                   }
@@ -453,8 +453,8 @@ public class CatzIntake {
 
           if((DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_INTAKE)&& (intakeState == 2))
           {
-            System.out.println(intakeState);
-            System.out.println(DataCollection.chosenDataID.getSelected().toString());
+           // System.out.println(intakeState);
+            //System.out.println(DataCollection.chosenDataID.getSelected().toString());
             //TBD Use the time used for calculatiobns; Group angles together
             data = new CatzLog(time, targetAngle, currentAngle, targetAngularRate, angleDot, 
                                -finalMotorPower, powerForMotor, deltaAngle, deltaTime, intakeState, targetAngularAcceleration, gravityTorque, -999.0, -999.0, -999.0,

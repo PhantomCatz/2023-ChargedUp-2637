@@ -254,13 +254,21 @@ public class CatzDrivetrain
         RT_BACK_MODULE.setCoastMode();
     }
 
-    public void updateShuffleboard()
+    public void smartDashboardDriveTrain()
     {
-        LT_FRNT_MODULE.updateShuffleboard();
-        LT_BACK_MODULE.updateShuffleboard();
-        RT_FRNT_MODULE.updateShuffleboard();
-        RT_BACK_MODULE.updateShuffleboard();
+        LT_FRNT_MODULE.smartDashboardModules();
+        LT_BACK_MODULE.smartDashboardModules();
+        RT_FRNT_MODULE.smartDashboardModules();
+        RT_BACK_MODULE.smartDashboardModules();
+    }
+    
 
+    public void smartDashboardDriveTrain_DEBUG()
+    {
+        LT_FRNT_MODULE.smartDashboardModules_DEBUG();
+        LT_BACK_MODULE.smartDashboardModules_DEBUG();
+        RT_FRNT_MODULE.smartDashboardModules_DEBUG();
+        RT_BACK_MODULE.smartDashboardModules_DEBUG();
         SmartDashboard.putNumber("Joystick", steerAngle);
     }
 
@@ -358,4 +366,13 @@ public class CatzDrivetrain
     {
       return (Math.sqrt(Math.pow(xJoy, 2) + Math.pow(yJoy, 2)));
     }
+
+    public void lockWheels()
+    {
+        LT_FRNT_MODULE.setWheelAngle(-45.0, NOT_FIELD_RELATIVE);
+        LT_BACK_MODULE.setWheelAngle(45.0, NOT_FIELD_RELATIVE);
+        RT_FRNT_MODULE.setWheelAngle(-135.0, NOT_FIELD_RELATIVE);
+        RT_BACK_MODULE.setWheelAngle(135.0, NOT_FIELD_RELATIVE);
+    }
+
 }

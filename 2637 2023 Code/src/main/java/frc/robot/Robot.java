@@ -106,6 +106,8 @@ public class Robot extends TimedRobot {
   public static final boolean STOWED   = false;
   public static boolean elevatorState = STOWED;
   public static  boolean intakeState   = STOWED;
+  public static boolean cubeRequest = false;
+  public static boolean coneRequest = false;
 
   /*
    * For autobalancing
@@ -162,7 +164,7 @@ public class Robot extends TimedRobot {
     drivetrain     = new CatzDrivetrain();
     intake         = new CatzIntake();
     elevator       = new CatzElevator();
-    //indexer        = new CatzIndexer();
+    indexer        = new CatzIndexer();
     catzRGB        = new CatzRGB();
     claw           = new CatzClaw();
 
@@ -184,18 +186,32 @@ public class Robot extends TimedRobot {
   public void robotPeriodic()
   {
     dataCollection.updateLogDataID();
-    drivetrain.updateShuffleboard();
+    
 
     //For each mechanism - debug and comp
     SmartDashboard.putNumber("NavX", navX.getAngle());
 
+    balance.SmartDashboardBalance();
+    //claw
+    drivetrain.smartDashboardDriveTrain();
     elevator.smartDashboardElevator();
+    indexer.SmartDashboardIndexer();
+    intake.smartDashboardIntake();
+    
+   
+   //debug should be commented out for comp
+
+    balance.SmartDashboardBalanceDebug();
+    //claw
+    drivetrain.smartDashboardDriveTrain_DEBUG();
     elevator.smartDashboardElevator_DEBUG();
+   // indexer.SmartDashboardIndexer_Debug();
+    intake.smartDashboardIntake_Debug();
 
     
     catzRGB.LEDWork();
-    intake.smartDashboardIntake();
-    intake.smartDashboardIntake_Debug();
+    
+    
   }
 
 
@@ -225,7 +241,6 @@ public class Robot extends TimedRobot {
     //dataCollection.setLogDataID(dataCollection.LOG_ID_DRV_STRAIGHT);  //TBD Pull from shuffleboard
     dataCollection.startDataCollection();                             //TBD where do we want to do this since also used in teleop?  robotInit???
 
-    drivetrain.initializeOffsets();     //TBD - Nicholas Update
     Timer.delay(OFFSET_DELAY);
 
     paths.determinePath();
@@ -277,6 +292,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic()
   {
+  
     indexer.indexerMtrCtrlFRNT.set(-0.3);
     if(xboxDrv.getXButton() == true)
     {
@@ -284,11 +300,8 @@ public class Robot extends TimedRobot {
     }
     else
     {
-      indexer.runSideBeltsOFF();
+      indexer.stopSideBelts();
     }
-
-    //indexer.inDexerMtrCtrlFRNT.set(-.8); // to delete
-    //intake.intakeRollerIn();
     //----------------------------------------------------------------------------------------------
     //  Drivetrain
     //----------------------------------------------------------------------------------------------
@@ -419,6 +432,37 @@ public class Robot extends TimedRobot {
     {
       //indexer manual index
     }        
+
+    //endgame
+
+    if(xboxAux.getLeftStickButton() && xboxAux.getRightStickButton())
+    {
+      //auto balance
+      
+    }
+    if(xboxDrv.getBButton())
+    {
+      drivetrain.lockWheels();
+    }
+
+    //Human Player comms
+    
+    if(xboxAux.getLeftTriggerAxis() > 0.5)
+    {
+      cubeRequest = true;
+    }
+    else
+    {
+      cubeRequest = false;
+    }
+    if(xboxAux.getRightTriggerAxis() > 0.5)
+    {
+      coneRequest = true;
+    }
+    else
+    {
+      coneRequest = false;
+    }
     
   }   //End of teleopPeriodic()
 

@@ -10,19 +10,19 @@ import frc.robot.Robot;
 
 public class CatzRGB 
 {
-    private final int LED_COUNT = 54;
+    private final int LED_COUNT = 10;
     private final int COLOR1_LED_COUNT = LED_COUNT / 2;
 
     private final int MAX_LED_BUFFER_INDEX = LED_COUNT - 1;
 
-    private final int LED_PWM_PORT_FRNT = 0;
-    private final int LED_PWM_PORT_BACK = 3;
+    private final int LED_PWM_PORT_FRNT = 1;
+    //private final int LED_PWM_PORT_BACK = 2;
 
     private AddressableLED ledFrnt;
-    //private AddressableLED ledBack;
+   // private AddressableLED ledBack;
 
     private AddressableLEDBuffer ledBufferFrnt;
-    //private AddressableLEDBuffer ledBufferBack;
+    private AddressableLEDBuffer ledBufferBack;
     
     private Color RED    = Color.kRed;
     private Color ORANGE = Color.kOrange;
@@ -60,10 +60,10 @@ public class CatzRGB
     public CatzRGB()
     {
         ledFrnt = new AddressableLED(LED_PWM_PORT_FRNT);
-        //ledBack = new AddressableLED(LED_PWM_PORT_BACK);
+       // ledBack = new AddressableLED(LED_PWM_PORT_BACK);
 
         ledBufferFrnt = new AddressableLEDBuffer(LED_COUNT);
-       // ledBufferBack = new AddressableLEDBuffer(LED_COUNT);
+        //ledBufferBack = new AddressableLEDBuffer(LED_COUNT);
 
         ledFrnt.setLength(ledBufferFrnt.getLength());
         ledFrnt.setData(ledBufferFrnt);
@@ -132,6 +132,14 @@ public class CatzRGB
         {
             solidColor(YELLOW);
         }
+        else if(Robot.cubeRequest == true)
+        {
+            flash(PURPLE,WHITE);
+        }
+        else if (Robot.coneRequest == true)
+        {
+            flash(YELLOW,WHITE);
+        }
         else if(Robot.cubeScoringReady == true)
         {
             setLEDPattern(PURPLE, WHITE);
@@ -160,9 +168,10 @@ public class CatzRGB
             }
         }
         
-        //solidColor(GREEN);
+        solidColor(GREEN);
         ledDelay++;
         ledFrnt.setData(ledBufferFrnt);
+        //ledBack.setData(ledBufferBack);
        /*  if(checkGyro())
         {
             ledFrnt.setData(ledBufferFrnt);
