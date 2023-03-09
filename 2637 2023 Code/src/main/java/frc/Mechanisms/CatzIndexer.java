@@ -191,6 +191,7 @@ public class CatzIndexer{
         indexerMtrCtrlLFT_BLT_WHEEL = new CANSparkMax(INDEXER_MC_CAN_ID_LFT, MotorType.kBrushless); 
 
         indexerMtrCtrlLFT_BLT_WHEEL.restoreFactoryDefaults();
+       
     
        
 
@@ -355,34 +356,49 @@ public class CatzIndexer{
         indexerMtrCtrlFRNT.stopMotor();
     }
 
-    public void runSideBelts() {
-        indexerMtrCtrlRGT_BLT_WHEEL.set(INDEXER_SIDE_WHEEL_SPEED);
+
+    /*-----------------------------------------------------------------------------------------
+    *  
+    *  Indexer Control
+    *
+    *----------------------------------------------------------------------------------------*/
+    public void indexerFrntIngest() 
+    {
+        indexerMtrCtrlRGT_BLT_WHEEL.set( INDEXER_SIDE_WHEEL_SPEED);
         indexerMtrCtrlLFT_BLT_WHEEL.set(-INDEXER_SIDE_WHEEL_SPEED);
+        indexerMtrCtrlFRNT.set(-1.0);
     }
-    public void stopSideBelts() {
+
+    public void indexerFrntEject() 
+    {
+        indexerMtrCtrlRGT_BLT_WHEEL.set(-INDEXER_SIDE_WHEEL_SPEED);
+        indexerMtrCtrlLFT_BLT_WHEEL.set( INDEXER_SIDE_WHEEL_SPEED);
+        indexerMtrCtrlFRNT.set(0.5);
+    }
+
+    public void indexerFrntStop() 
+    {
         indexerMtrCtrlRGT_BLT_WHEEL.set(0);
         indexerMtrCtrlLFT_BLT_WHEEL.set(0);
-    }
-
-
-    public void SmartDashboardIndexer()
-    {
-        SmartDashboard.putString("object detected", colorSelected);
-
+        indexerMtrCtrlFRNT.set(0.0);
 
     }
-   /* public void SmartDashboardIndexer_Debug()
+
+    public void procCmdIndexerFrnt(boolean xboxValueIn, boolean xboxValueOut)
     {
-        SmartDashboard.putNumber("TraceID", finalStateINT);
-        SmartDashboard.putNumber("Encoder Position", m_encoder.getPosition());
-        SmartDashboard.putNumber("Encoder getpositionfactor", m_encoder.getPositionConversionFactor());
-        SmartDashboard.putNumber("Proximity", proximity);
-        SmartDashboard.putNumber("Red", detectedColor.red);
-        SmartDashboard.putNumber("Green", detectedColor.green);
-        SmartDashboard.putNumber("Blue", detectedColor.blue);
-        SmartDashboard.putNumber("IR", IR);
-        SmartDashboard.putBoolean("BeamBreak", beamBreakContinuity);
-    }*/
+      if (xboxValueIn == true)
+      {
+        indexerFrntIngest();
+      }
+      else if (xboxValueOut == true)
+      { 
+        indexerFrntEject();
+      }
+      else
+      {
+        indexerFrntStop();
+      }
+    }
 
     public void DataCollectionINDEXER()
     {
@@ -393,6 +409,12 @@ public class CatzIndexer{
         }
     }
 
+
+    /*-----------------------------------------------------------------------------------------
+    *  
+    *  Sensor Methods
+    *
+    *----------------------------------------------------------------------------------------*/
     public boolean objectDetectedMethod()
     {
 
@@ -431,4 +453,30 @@ public class CatzIndexer{
         return isCubeDetected;
     }
     
+        
+
+    /*-----------------------------------------------------------------------------------------
+    *  
+    *  Smart Dashboard
+    *
+    *----------------------------------------------------------------------------------------*/
+    public void SmartDashboardIndexer()
+    {
+        SmartDashboard.putString("object detected", colorSelected);
+
+
+    }
+    public void SmartDashboardIndexer_Debug()
+    {
+        SmartDashboard.putNumber("TraceID", finalStateINT);
+        SmartDashboard.putNumber("Encoder Position", m_encoder.getPosition());
+        SmartDashboard.putNumber("Encoder getpositionfactor", m_encoder.getPositionConversionFactor());
+        SmartDashboard.putNumber("Proximity", proximity);
+        SmartDashboard.putNumber("Red", detectedColor.red);
+        SmartDashboard.putNumber("Green", detectedColor.green);
+        SmartDashboard.putNumber("Blue", detectedColor.blue);
+        SmartDashboard.putNumber("IR", IR);
+        SmartDashboard.putBoolean("BeamBreak", beamBreakContinuity);
+    }
+
 }

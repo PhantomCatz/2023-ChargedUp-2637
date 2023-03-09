@@ -61,10 +61,10 @@ public class Robot extends TimedRobot {
   private final int XBOX_DRV_PORT = 0;
   private final int XBOX_AUX_PORT = 1;
 
-  private final int DPAD_UP = 0;
-  private final int DPAD_DN = 180;
-  private final int DPAD_LT = 270;
-  private final int DPAD_RT = 90;
+  public static final int DPAD_UP = 0;
+  public static final int DPAD_DN = 180;
+  public static final int DPAD_LT = 270;
+  public static final int DPAD_RT = 90;
 
   private XboxController xboxDrv;
   private XboxController xboxAux;
@@ -142,7 +142,8 @@ public class Robot extends TimedRobot {
     //----------------------------------------------------------------------------------------------
     //PDH
     
-    //pneumaticHub = new PneumaticHub(PH_CAN_ID);
+    pneumaticHub = new PneumaticHub(PH_CAN_ID);
+    
     navX = new AHRS();
     navX.reset();
     navX.setAngleAdjustment(-navX.getYaw());  //TBD - What is this for?
@@ -164,7 +165,7 @@ public class Robot extends TimedRobot {
     drivetrain     = new CatzDrivetrain();
     intake         = new CatzIntake();
     elevator       = new CatzElevator();
-    indexer        = new CatzIndexer();
+    //indexer        = new CatzIndexer();
     catzRGB        = new CatzRGB();
     claw           = new CatzClaw();
 
@@ -195,7 +196,7 @@ public class Robot extends TimedRobot {
     //claw
     drivetrain.smartDashboardDriveTrain();
     elevator.smartDashboardElevator();
-    indexer.SmartDashboardIndexer();
+    //indexer.SmartDashboardIndexer();
     intake.smartDashboardIntake();
     
    
@@ -281,6 +282,8 @@ public class Robot extends TimedRobot {
 
     //dataCollection.setLogDataID(dataCollection.LOG_ID_INTAKE);
     dataCollection.startDataCollection();
+
+    //elevator.elevatorPivotStowHoldPosition();//TBD - temporary
   }
 
 
@@ -292,8 +295,9 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic()
   {
+   
   
-    indexer.indexerMtrCtrlFRNT.set(-0.3);
+    /*indexer.indexerMtrCtrlFRNT.set(-0.3);
     if(xboxDrv.getXButton() == true)
     {
       indexer.runSideBelts();
@@ -301,7 +305,7 @@ public class Robot extends TimedRobot {
     else
     {
       indexer.stopSideBelts();
-    }
+    }*/
     //----------------------------------------------------------------------------------------------
     //  Drivetrain
     //----------------------------------------------------------------------------------------------
@@ -315,7 +319,6 @@ public class Robot extends TimedRobot {
     //----------------------------------------------------------------------------------------------
     //  Intake
     //----------------------------------------------------------------------------------------------
-    //TBD - move logic to class method; this removes multiple gets and duplicate logic
     intake.procCmdDeploy(xboxDrv.getLeftStickButton(),    //Deploy
                          xboxDrv.getRightStickButton() ); //Stow
 
@@ -390,32 +393,13 @@ public class Robot extends TimedRobot {
     //----------------------------------------------------------------------------------------------
     //  Elevator - Manual
     //----------------------------------------------------------------------------------------------
-    
-
     elevator.manualExtension(xboxAux.getRightY());
 
     elevator.ignoreSpoolSoftLimit(xboxAux.getRightStickButton());
-    
-    if(xboxAux.getPOV() == DPAD_UP)
-    {
-      if(intakeState == DEPLOYED)
-      {
-        //stow intake
-        intakeState = STOWED;
-      }
-      elevator.manualPivotControl(-0.1);
-      //while pressed, deploy elevator
-    
-    }
-    else if(xboxAux.getPOV() == DPAD_DN)
-    {
-      //while pressed, pivot elevator
-      elevator.manualPivotControl(0.1);
-    }
-    else
-    {
-      elevator.manualPivotControl(0.0);
-    }
+
+    elevator.procCmdManualPivot(xboxAux.getPOV(),           //Pivot Fwd/Bwd
+                                xboxAux.getLeftBumper());   //Stow Position Hold
+
 
 
     //----------------------------------------------------------------------------------------------
@@ -476,6 +460,7 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledInit()
   {
+    elevator.elevatorState = elevator.ELEVATOR_STATE_IDLE;
     currentTime.stop();
     drivetrain.setCoastMode();
     

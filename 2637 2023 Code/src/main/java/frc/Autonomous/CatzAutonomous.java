@@ -10,41 +10,30 @@ public class CatzAutonomous
     //drive straight variables
     public Boolean startDriving = false;
 
-    final double DRV_S_GEAR_RATIO = 1.0/6.75;
+    final double DRV_S_GEAR_RATIO = 6.75;       //SDS mk4i L2 ratio
     final double DRV_S_THREAD_PERIOD = 0.02;
 
-    final double TALONFX_INTEGRATED_ENC_CNTS_PER_REV      = 2048.0;
-    final double DRVTRAIN_WHEEL_DIAMETER                  = 4.0;
-    final double DRVTRAIN_WHEEL_CIRCUMFERENCE             = (Math.PI * DRVTRAIN_WHEEL_DIAMETER);
-    final double DRVTRAIN_ENC_COUNTS_TO_INCH              = DRV_S_GEAR_RATIO * DRVTRAIN_WHEEL_CIRCUMFERENCE / TALONFX_INTEGRATED_ENC_CNTS_PER_REV;
+    final double TALONFX_INTEGRATED_ENC_CNTS_PER_REV = 2048.0;
+
+    final double DRVTRAIN_WHEEL_DIAMETER             = 4.0;
+    final double DRVTRAIN_WHEEL_CIRCUMFERENCE        = (Math.PI * DRVTRAIN_WHEEL_DIAMETER);
+    final double DRVTRAIN_ENC_COUNTS_TO_INCH         = DRVTRAIN_WHEEL_CIRCUMFERENCE / TALONFX_INTEGRATED_ENC_CNTS_PER_REV / DRV_S_GEAR_RATIO;
 
     private double DRV_S_STOP_DISTANCE = 0.5;
-    private double DRV_S_MIN_POWER = 0.1;
-    private double DRV_S_ERROR_GAIN = 0.02;
-    private double DRV_S_RATE_GAIN = 0.01;
+    private double DRV_S_MIN_POWER     = 0.1;
 
-    private double drvSdistanceOffset = 0.0;
-    private double drvSdistanceRemain = 0.0;
-    private double drvStargetPower = 0.0;
-    private double drvSturnPower = 0.0;
-    private double drvSangleOffset = 0.0; //change for the final code EL 2/4
-    private double drvScurrentAngle = 0.0;
-    private double drvScurrentError = 0.0;
-    private double drvSprevError = 0.0;
-    private double time = 0.0;
-    private double prevTime = -1.0; // no big initial rate
-    private double drvSerrorRate = 0;
-    private Boolean drvSbackwards;
-    public double drvSwheelPos = 0.0;
-    public double drvSdistance = 0.0;
+    private double DRV_S_ERROR_GAIN    = 0.05;
+    private double DRV_S_RATE_GAIN     = 0.001;
+
+    //public  double drvSdistance = 0.0;
 
     //turn in place variables
     private final static double PID_TURN_THRESHOLD   = 1.25;
 
 	private final static double PID_TURN_IN_PLACE_KP = 0.008;
     
-    private final static double TURN_DRIVE_MAX_POS_POWER  =  0.6;
-	private final static double TURN_DRIVE_MAX_NEG_POWER  = -0.6;
+    private final static double TURN_DRIVE_MAX_POS_POWER  =  0.4;
+	private final static double TURN_DRIVE_MAX_NEG_POWER  = -0.4;
 
     private final static double TURN_DRIVE_MIN_POWER = 0.1;
 
@@ -56,24 +45,48 @@ public class CatzAutonomous
 	private static double turnCurrentAngle;
 	private static double turnTargetAngle;
 
-    private static double turnPower;
-
     private Timer autonTimer;
     public CatzLog data;
+
+
 
     public CatzAutonomous()
     {
         autonTimer = new Timer();
     }
 
-    public void DriveStraight(double drvSdistance, double decelDistance, double maxSpeed,double drvSwheelPos, double maxTime)
-    { 
-        this.drvSwheelPos = drvSwheelPos;
-        this.drvSdistance = drvSdistance;
+
+
+    /*-----------------------------------------------------------------------------------------
+    *
+    *  DriveStraight
+    *
+    *----------------------------------------------------------------------------------------*/
+    public void DriveStraight(double distance, double decelDistance, double maxSpeed, double drvSwheelPos, double maxTime)
+    {
+        double distanceRemain = 0.0;
+        double targetPower    = 0.0;
+        double turnPower = 0.0;
+        double angleError = 0.0;
+        double prevAngleError = 0.0;
+        double time = 0.0;
+        double prevTime = -1.0; // no big initial rate
+        double angleErrorRate = 0;
+
+        Boolean drvSbackwards;
+
+        double startingPosition = 0.0;
+        double currentPosition  = 0.0;
+
+        double currentAngle     = 0.0;
+        double startingAngle    = 0.0;
+        
+        //this.drvSwheelPos = drvSwheelPos;
+        //this.drvSdistance = distance;
 
         startDriving = true;
 
-        if(drvSdistance < 0)
+        if(maxSpeed < 0)
         {
             drvSbackwards = true;
         }
@@ -82,61 +95,83 @@ public class CatzAutonomous
             drvSbackwards = false;
         }
 
-        drvSdistanceOffset = Robot.drivetrain.getAveragePosition();
-        drvSangleOffset = Robot.navX.getAngle(); // change for final 2/4 EL
-        drvSdistanceRemain = drvSdistance;
+        currentPosition    = Robot.drivetrain.LT_FRNT_MODULE.getDriveMotorPosition();
+        startingPosition   = currentPosition;
+
+        startingAngle    = Robot.navX.getAngle(); // change for final 2/4 EL
+        distanceRemain = distance;
 
         autonTimer.reset();
         autonTimer.start();
 
-        while(Math.abs(drvSdistanceRemain) >= DRV_S_STOP_DISTANCE && startDriving && time < maxTime)
+        while(Math.abs(distanceRemain) >= DRV_S_STOP_DISTANCE && startDriving && time < maxTime)
         {
-            time = autonTimer.get();
-            drvScurrentAngle = Robot.navX.getAngle();
-            drvScurrentError = drvSangleOffset - drvScurrentAngle;
-            drvSerrorRate = (drvScurrentError - drvSprevError) / (time - prevTime);
-
-            drvSdistanceRemain = drvSdistance + (Robot.drivetrain.getAveragePosition() - drvSdistanceOffset) * DRVTRAIN_ENC_COUNTS_TO_INCH;
-            drvStargetPower = -Clamp(-1.0, drvSdistanceRemain / drvSdistance / decelDistance, 1.0) * maxSpeed;
-            drvSturnPower = Clamp(-1.0,-DRV_S_ERROR_GAIN * drvScurrentError - DRV_S_RATE_GAIN * drvSerrorRate, 1.0); //"-" in front of Error and Rate
+            time             = autonTimer.get();
+            currentPosition  = Robot.drivetrain.LT_FRNT_MODULE.getDriveMotorPosition();
+            currentAngle     = Robot.navX.getAngle();
             
-            if(Math.abs(drvStargetPower) < DRV_S_MIN_POWER)
+            angleError = startingAngle - currentAngle;
+            angleErrorRate    = (angleError - prevAngleError) / (time - prevTime);
+
+            distanceRemain = distance - (Math.abs(currentPosition - startingPosition) * DRVTRAIN_ENC_COUNTS_TO_INCH);
+            targetPower    = Clamp(-1.0, distanceRemain / distance / decelDistance, 1.0) * maxSpeed;
+            
+            turnPower      = Clamp(-1.0, DRV_S_ERROR_GAIN * angleError + DRV_S_RATE_GAIN * angleErrorRate, 1.0); //"-" in front of Error and Rate
+            
+            if(Math.abs(targetPower) < DRV_S_MIN_POWER)
             {
-                drvStargetPower = DRV_S_MIN_POWER * Math.signum(drvStargetPower);
+                targetPower = DRV_S_MIN_POWER * Math.signum(targetPower);
             }
 
             if(drvSbackwards)
             {
-                drvSturnPower = -drvSturnPower;
+                turnPower = -turnPower;
             }
 
-            Robot.drivetrain.translateTurn(drvSwheelPos, drvStargetPower, drvSturnPower, Robot.drivetrain.getGyroAngle()); //TBD need to check
-            
+            Robot.drivetrain.translateTurn(drvSwheelPos, targetPower, turnPower, Robot.drivetrain.getGyroAngle()); //TBD need to check
 
-            prevTime = time;
-            drvSprevError = drvScurrentError;
+            prevTime      = time;
+            prevAngleError = angleError;
 
-            if(DataCollection.getLogDataID() == DataCollection.LOG_ID_DRV_STRAIGHT)
+            //if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_DRV_STRAIGHT)
             {
-                data = new CatzLog(Robot.currentTime.get(), drvSdistanceRemain, Robot.drivetrain.getAveragePosition(), drvStargetPower, drvScurrentError, drvScurrentAngle, drvSerrorRate, drvSturnPower, 
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
+                //TBD Use Time and position used in calculations
+                data = new CatzLog(time, distanceRemain, currentPosition, 
+                                                             targetPower, 
+                                                             angleError, 
+                                                             currentAngle, 
+                                                             angleErrorRate, 
+                                                             turnPower, 
+                                                             Robot.drivetrain.LT_FRNT_MODULE.getAngle(),
+                                                             Robot.drivetrain.LT_BACK_MODULE.getAngle(),
+                                                             Robot.drivetrain.RT_FRNT_MODULE.getAngle(),
+                                                             Robot.drivetrain.RT_BACK_MODULE.getAngle(),
+                                                             0.0, 0.0, 0.0, 0);  
                 Robot.dataCollection.logData.add(data);
             }
+
             Timer.delay(DRV_S_THREAD_PERIOD);
         }
 
-        //Robot.drivetrain.autoDrive(0); do we need this? 
-        Robot.drivetrain.setDrivePower(0);
+        System.out.println("Done driving");
+        Robot.drivetrain.autoDrive(0);
 
         startDriving = false;
     }
 
+
+    /*-----------------------------------------------------------------------------------------
+    *
+    *  TurnInPlace
+    *
+    *----------------------------------------------------------------------------------------*/
     public void TurnInPlace(double degreesToTurn, double timeoutSeconds)
     {
         boolean turnInPlaceDone = false;
 
         double  currentTime       = 0.0;
         double  angleRemainingAbs = 999.0;
+        double  turnPower = 0.0;
 
         autonTimer.reset();
         autonTimer.start(); 
@@ -192,7 +227,7 @@ public class CatzAutonomous
 
             if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_TURN_IN_PLACE)
             {
-            data = new CatzLog(currentTime, turnCurrentAngle, turnCurrentError, turnPower,
+            data = new CatzLog(currentTime, turnCurrentAngle, turnCurrentError, turnPower, 
                                 -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999.0, -999);
 
             Robot.dataCollection.logData.add(data);
@@ -223,13 +258,8 @@ public class CatzAutonomous
         }
     }
 
-    public double getWheelPos()
-    {
-        return drvSwheelPos;
-    }
-
     public double getDistance()
     {
-        return drvSdistance;
+        return -999.9;  //TBD  drvSdistance;
     }
 }

@@ -58,7 +58,7 @@ public class DataCollection
     private final String LOG_HDR_BALANCE_MOD = "time,pitch,rate,power,pitchTerm,rateTerm,";
     private final String LOG_HDR_INTAKE = "time,target-angle,current-angle,target-angular-rate,angle-dot,final-motor-pwr,pwr-for-mtr,dt-ang,dt-time,state,targetAngAccel";
     private final String LOG_HDR_INDEXER = "";
-    private final String LOG_HDR_ELEVATOR = "time,cur-spl-in,cur-piv-cnt,cur-piv-ang,piv-raw-val,piv-err";
+    private final String LOG_HDR_ELEVATOR = "time,raw-enc-val,cur-piv-agl,piv-lop-err,stow-hold-err,piv-mtr-pwr,piv-abs-pos,talon-cnts,crg-pos-inch";
     private final String LOG_HDR_CLAW = "";
     private final String LOG_HDR_DRV_STRAIGHT = "time, d_rem,enc_pos,power,angle_err,angle,rate,turn_power";
     private final String LOG_HDR_TURN_IN_PLACE = "time, cur-angle, cur-err, mtr-pwr";

@@ -24,8 +24,8 @@ public class CatzBalance
     public static CatzLog data;
 
     public final double ANG_SLOWBAND = 10.0; 
-    public final double ANG_GAIN = 0.01;
-    public final double RATE_GAIN = 0.0025;
+    public final double ANG_GAIN = 0.015;
+    public final double RATE_GAIN = 0.0075;
     public final double MAX_POWER = 0.175;
     public final double BALANCE_THREAD_PERIOD = 0.02;
 
@@ -59,7 +59,7 @@ public class CatzBalance
                 timer.reset();
                 timer.start();
 
-                if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_BALANCE)
+                if(Robot.dataCollection.getLogDataID() == Robot.dataCollection.LOG_ID_BALANCE)
                 {
                     data = new CatzLog(ANG_SLOWBAND, ANG_GAIN, RATE_GAIN, MAX_POWER, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
                     Robot.dataCollection.logData.add(data);
@@ -89,11 +89,10 @@ public class CatzBalance
                         prevPitchAngle = pitchAngle;
                         prevTime = time;
 
-                        if(DataCollection.chosenDataID.getSelected() == DataCollection.LOG_ID_BALANCE)
-                        {
+                        //if(Robot.dataCollection.getLogDataID() == DataCollection.LOG_ID_BALANCE){
                             data = new CatzLog(time, pitchAngle, angleRate, power, pitchTerm, rateTerm, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);  
                             Robot.dataCollection.logData.add(data);
-                        }
+                        //}
                     }
                     Timer.delay(BALANCE_THREAD_PERIOD);
                 }
@@ -119,15 +118,12 @@ public class CatzBalance
         startBalance = false;
     }
 
-    
-    public void SmartDashboardBalanceDebug()
-    {
+    public void SmartDashboardBalanceDebug(){
         SmartDashboard.putNumber("Pitch Rate", angleRate);
         SmartDashboard.putNumber("Power", power);
     }
 
-    public void SmartDashboardBalance()
-    {
+    public void SmartDashboardBalance(){
         SmartDashboard.putNumber("Pitch", pitchAngle);
     }
 }
